@@ -18,13 +18,15 @@ export default function HomeScreen(): React.ReactElement {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
+  const toggleFacing = (current: CameraType): CameraType =>
+    current === 'back' ? 'front' : 'back';
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const handleCapture = async () => {
     if (cameraRef.current) {
@@ -40,7 +42,7 @@ export default function HomeScreen(): React.ReactElement {
   };
 
   const handleFlip = () => {
-    setFacing((prev) => (prev === 'back' ? 'front' : 'back'));
+    setFacing(toggleFacing);
   };
 
   const handleProceed = () => {
