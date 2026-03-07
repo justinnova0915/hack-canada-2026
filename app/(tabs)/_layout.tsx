@@ -1,4 +1,3 @@
-import CustomNavBar from '@/components/CustomNavBar';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
@@ -16,8 +15,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarStyle: { display: 'none' },
       }}
-      tabBar={(props) => <CustomNavBar {...props} />}>
+      tabBar={() => null}>
       <Tabs.Screen
         name="index"
         options={{

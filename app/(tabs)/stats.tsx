@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
-import { useFocusEffect } from 'expo-router';
 
 export default function StatsScreen() {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export default function StatsScreen() {
         try {
           if (isActive) setLoading(true);
           const receipts = await getUserReceipts(user.uid);
-          
+
           if (!isActive) return;
 
           let necessaryTotal = 0;
@@ -92,16 +93,16 @@ export default function StatsScreen() {
               }
               cardsMap[cardIdentifier].amount += amount;
             } else if (data.source?.paymentMethod) {
-               const paymentMethod = data.source.paymentMethod;
-               if (!cardsMap[paymentMethod]) {
-                  cardsMap[paymentMethod] = {
-                     amount: 0,
-                     name: paymentMethod,
-                     last4: '0000',
-                     color: cardColors[Object.keys(cardsMap).length % cardColors.length]
-                  };
-               }
-               cardsMap[paymentMethod].amount += amount;
+              const paymentMethod = data.source.paymentMethod;
+              if (!cardsMap[paymentMethod]) {
+                cardsMap[paymentMethod] = {
+                  amount: 0,
+                  name: paymentMethod,
+                  last4: '0000',
+                  color: cardColors[Object.keys(cardsMap).length % cardColors.length]
+                };
+              }
+              cardsMap[paymentMethod].amount += amount;
             }
           });
 
@@ -145,101 +146,104 @@ export default function StatsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>SPENDING PULSE</Text>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 120 }]}>
+        <Text style={styles.sectionLabel}>SPENDING PULSE</Text>
 
-      {/* Hero Summary Card */}
-      <View style={styles.summaryCard}>
-        <Text style={styles.totalValue}>${totalCurrent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
-        <Text style={styles.totalSub}>Total Spent</Text>
-      </View>
-
-      {/* The Big Three breakdown */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>The Big Three</Text>
-        <Text style={styles.cardSubtitle}>Categorical split of your expenses</Text>
-        
-        <View style={styles.compositionBar}>
-          {totalCurrent === 0 ? (
-            <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
-          ) : (
-            Object.entries(expenses).map(([key, data]) => (
-              <View
-                key={key}
-                style={{
-                  flex: data.current,
-                  backgroundColor: data.color,
-                  height: '100%'
-                }}
-              />
-            ))
-          )}
+        {/* Hero Summary Card */}
+        <View style={styles.summaryCard}>
+          <Text style={styles.totalValue}>${totalCurrent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+          <Text style={styles.totalSub}>Total Spent</Text>
         </View>
 
-        <View style={styles.legendContainer}>
-           {Object.entries(expenses).map(([key, data]) => (
+        {/* The Big Three breakdown */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>The Big Three</Text>
+          <Text style={styles.cardSubtitle}>Categorical split of your expenses</Text>
+
+          <View style={styles.compositionBar}>
+            {totalCurrent === 0 ? (
+              <View style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+            ) : (
+              Object.entries(expenses).map(([key, data]) => (
+                <View
+                  key={key}
+                  style={{
+                    flex: data.current,
+                    backgroundColor: data.color,
+                    height: '100%'
+                  }}
+                />
+              ))
+            )}
+          </View>
+
+          <View style={styles.legendContainer}>
+            {Object.entries(expenses).map(([key, data]) => (
               <View key={key} style={styles.legendItem}>
-                 <View style={[styles.legendDot, { backgroundColor: data.color }]} />
-                 <Text style={styles.legendLabel}>{data.label}</Text>
-                 <Text style={styles.legendValue}>${data.current.toFixed(2)}</Text>
+                <View style={[styles.legendDot, { backgroundColor: data.color }]} />
+                <Text style={styles.legendLabel}>{data.label}</Text>
+                <Text style={styles.legendValue}>${data.current.toFixed(2)}</Text>
               </View>
-           ))}
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* Spending Velocity */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Spending Velocity</Text>
-        <Text style={styles.cardSubtitle}>Current daily vs 30-day average</Text>
-        
-        <View style={styles.velocityRow}>
+        {/* Spending Velocity */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Spending Velocity</Text>
+          <Text style={styles.cardSubtitle}>Current daily vs 30-day average</Text>
+
+          <View style={styles.velocityRow}>
             <View style={styles.velocityStat}>
-               <Text style={styles.velocityValue}>${currentDaily.toFixed(2)}</Text>
-               <Text style={styles.velocityLabel}>Today</Text>
+              <Text style={styles.velocityValue}>${currentDaily.toFixed(2)}</Text>
+              <Text style={styles.velocityLabel}>Today</Text>
             </View>
             <View style={styles.velocityDivider} />
             <View style={styles.velocityStat}>
-               <Text style={styles.velocityValue}>${avgDaily.toFixed(2)}</Text>
-               <Text style={styles.velocityLabel}>30d Avg</Text>
+              <Text style={styles.velocityValue}>${avgDaily.toFixed(2)}</Text>
+              <Text style={styles.velocityLabel}>30d Avg</Text>
             </View>
-        </View>
+          </View>
 
-        <View style={[styles.velocityTrend, { backgroundColor: avgDaily > 0 ? velocityTrendColor : 'rgba(255, 107, 107, 0.1)' }]}>
+          <View style={[styles.velocityTrend, { backgroundColor: avgDaily > 0 ? velocityTrendColor : 'rgba(255, 107, 107, 0.1)' }]}>
             <Text style={styles.trendIcon}>{avgDaily > 0 ? velocityTrendIcon : '➖'}</Text>
             <Text style={styles.trendText}>{velocityTrendText}</Text>
+          </View>
         </View>
-      </View>
 
-      {/* Card Distribution */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Card Distribution</Text>
-        <Text style={styles.cardSubtitle}>Where your money is drawn from</Text>
+        {/* Card Distribution */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Card Distribution</Text>
+          <Text style={styles.cardSubtitle}>Where your money is drawn from</Text>
 
-        <View style={styles.cardList}>
+          <View style={styles.cardList}>
             {cards.length > 0 ? cards.map((card, idx) => {
-                const percentage = totalCurrent > 0 ? ((card.amount / totalCurrent) * 100).toFixed(1) : '0.0';
-                return (
-                    <View key={idx} style={styles.creditCardRow}>
-                        <View style={styles.creditCardInfo}>
-                            <View style={[styles.cardColorIndicator, { backgroundColor: card.color }]} />
-                            <View>
-                                <Text style={styles.creditCardName}>{card.name}</Text>
-                                <Text style={styles.creditCardLast4}>**** {card.last4}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.creditCardStats}>
-                            <Text style={styles.creditCardAmount}>${card.amount.toFixed(2)}</Text>
-                            <Text style={styles.creditCardPercent}>{percentage}%</Text>
-                        </View>
+              const percentage = totalCurrent > 0 ? ((card.amount / totalCurrent) * 100).toFixed(1) : '0.0';
+              return (
+                <View key={idx} style={styles.creditCardRow}>
+                  <View style={styles.creditCardInfo}>
+                    <View style={[styles.cardColorIndicator, { backgroundColor: card.color }]} />
+                    <View>
+                      <Text style={styles.creditCardName}>{card.name}</Text>
+                      <Text style={styles.creditCardLast4}>**** {card.last4}</Text>
                     </View>
-                );
+                  </View>
+                  <View style={styles.creditCardStats}>
+                    <Text style={styles.creditCardAmount}>${card.amount.toFixed(2)}</Text>
+                    <Text style={styles.creditCardPercent}>{percentage}%</Text>
+                  </View>
+                </View>
+              );
             }) : (
-                <Text style={{ color: 'rgba(240,236,227,0.5)', fontSize: 13, fontStyle: 'italic', textAlign: 'center', paddingVertical: 10 }}>No cards linked or parsed yet.</Text>
+              <Text style={{ color: 'rgba(240,236,227,0.5)', fontSize: 13, fontStyle: 'italic', textAlign: 'center', paddingVertical: 10 }}>No cards linked or parsed yet.</Text>
             )}
+          </View>
         </View>
-      </View>
 
-    </ScrollView>
+      </ScrollView>
+      <CustomNavBar />
+    </>
   );
 }
 
@@ -279,7 +283,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 4,
   },
-  
+
   card: {
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: 20,

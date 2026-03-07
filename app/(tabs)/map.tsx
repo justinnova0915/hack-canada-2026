@@ -1,6 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
 
@@ -28,7 +29,7 @@ export default function MapScreen() {
         try {
           if (isActive) setLoading(true);
           const receipts = await getUserReceipts(user.uid);
-          
+
           if (isActive) {
             const mappedTransactions = receipts.map((r) => {
               const data = r.receiptData || {};
@@ -62,22 +63,25 @@ export default function MapScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.sectionLabel}>GEOSPATIAL</Text>
-        <Text style={styles.heroTitle}>SpendMap</Text>
-      </View>
+    <>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.sectionLabel}>GEOSPATIAL</Text>
+          <Text style={styles.heroTitle}>SpendMap</Text>
+        </View>
 
-      <View style={styles.mapFrame}>
-        {loading ? (
-          <View style={[styles.mapFrame, { justifyContent: 'center', alignItems: 'center' }]}>
-            <ActivityIndicator size="large" color="#e8a44a" />
-          </View>
-        ) : (
-          <MapComponent transactions={transactions} />
-        )}
+        <View style={styles.mapFrame}>
+          {loading ? (
+            <View style={[styles.mapFrame, { justifyContent: 'center', alignItems: 'center' }]}>
+              <ActivityIndicator size="large" color="#e8a44a" />
+            </View>
+          ) : (
+            <MapComponent transactions={transactions} />
+          )}
+        </View>
       </View>
-    </View>
+      <CustomNavBar />
+    </>
   );
 }
 
@@ -108,6 +112,7 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   mapFrame: {
-    flex: 1,
-  },
+  flex: 1,
+  marginBottom: 90,
+},
 });

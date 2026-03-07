@@ -1,13 +1,34 @@
-import React, { useState, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
-import { useFocusEffect } from 'expo-router';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const filteredTransactions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return transactions;
+
+    return transactions.filter((tx) => {
+      const merchant = String(tx.merchant || '').toLowerCase();
+      const category = String(tx.category || '').toLowerCase();
+      const amount = Number(tx.amount || 0).toFixed(2);
+      const date = String(tx.date || '').toLowerCase();
+
+      return (
+        merchant.includes(q) ||
+        category.includes(q) ||
+        amount.includes(q) ||
+        date.includes(q)
+      );
+    });
+  }, [transactions, searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,45 +75,62 @@ export default function HistoryScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>PAPER TRAIL</Text>
-      <Text style={styles.heroTitle}>Digital Ledger</Text>
-      
-      <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
-        <Text style={styles.searchPlaceholder}>Search by merchant, category, or amount...</Text>
-      </View>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 120 }]}>
+        <Text style={styles.sectionLabel}>PAPER TRAIL</Text>
+        <Text style={styles.heroTitle}>Digital Ledger</Text>
 
-      <View style={styles.listContainer}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#e8a44a" style={{ marginTop: 40 }} />
-        ) : transactions.length > 0 ? (
-          transactions.map((tx) => (
-            <View key={tx.id} style={styles.transactionCard}>
-              <View style={styles.leftCol}>
-                <View style={styles.iconBox}>
-                  <Text style={{ fontSize: 20 }}>💸</Text>
+        <View style={styles.searchContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by merchant, category, amount, or date..."
+            placeholderTextColor="rgba(240,236,227,0.4)"
+            style={styles.searchInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        <View style={styles.listContainer}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#e8a44a" style={{ marginTop: 40 }} />
+          ) : filteredTransactions.length > 0 ? (
+            filteredTransactions.map((tx) => (
+              <View key={tx.id} style={styles.transactionCard}>
+                <View style={styles.leftCol}>
+                  <View style={styles.iconBox}>
+                    <Text style={{ fontSize: 20 }}>💸</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.merchantText}>{tx.merchant}</Text>
+                    <Text style={styles.dateText}>{tx.date}</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.merchantText}>{tx.merchant}</Text>
-                  <Text style={styles.dateText}>{tx.date}</Text>
+                <View style={styles.rightCol}>
+                  <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
+                  <Text style={styles.categoryText}>{tx.category}</Text>
                 </View>
               </View>
-              <View style={styles.rightCol}>
-                <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
-                <Text style={styles.categoryText}>{tx.category}</Text>
-              </View>
+            ))
+          ) : transactions.length > 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔎</Text>
+              <Text style={styles.emptyTitle}>No matching transactions</Text>
+              <Text style={styles.emptyDesc}>Try a different merchant, category, amount, or date.</Text>
             </View>
-          ))
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📭</Text>
-            <Text style={styles.emptyTitle}>No transactions yet</Text>
-            <Text style={styles.emptyDesc}>Snap a receipt on the home tab to start logging.</Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>📭</Text>
+              <Text style={styles.emptyTitle}>No transactions yet</Text>
+              <Text style={styles.emptyDesc}>Snap a receipt on the home tab to start logging.</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+      <CustomNavBar />
+    </>
   );
 }
 
@@ -138,6 +176,12 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     color: 'rgba(240,236,227,0.4)',
     fontSize: 14,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#f0ece3',
+    fontSize: 14,
+    paddingVertical: 0,
   },
   listContainer: {
     gap: 16,

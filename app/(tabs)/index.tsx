@@ -1,4 +1,3 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
@@ -12,13 +11,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { uploadReceiptImage } from '../../services/api';
 import { logReceipt } from '../../services/receiptService';
-import { uploadReceiptImage } from '../api';
 
 export default function HomeScreen(): React.ReactElement {
   const { user } = useAuth();
@@ -31,8 +29,6 @@ export default function HomeScreen(): React.ReactElement {
   const [aiResult, setAiResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<any>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -117,42 +113,6 @@ export default function HomeScreen(): React.ReactElement {
     }
   };
 
-  const startEditing = () => {
-    setEditForm({
-      merchantName: aiResult.merchant?.name || '',
-      category: aiResult.merchant?.category || '',
-      date: aiResult.date || '',
-      grossTotal: aiResult.totals?.gross?.toString() || '0',
-      items: aiResult.items?.map((item: any) => ({
-        name: item.name || '',
-        amount: item.amount?.toString() || '0',
-      })) || [],
-    });
-    setIsEditing(true);
-  };
-
-  const saveEdits = () => {
-    setAiResult({
-      ...aiResult,
-      merchant: {
-        ...aiResult.merchant,
-        name: editForm.merchantName,
-        category: editForm.category,
-      },
-      date: editForm.date,
-      totals: {
-        ...aiResult.totals,
-        gross: parseFloat(editForm.grossTotal) || 0,
-      },
-      items: editForm.items.map((item: any) => ({
-        ...item,
-        name: item.name,
-        amount: parseFloat(item.amount) || 0,
-      })),
-    });
-    setIsEditing(false);
-  };
-
   const handleLogReceipt = async () => {
     if (!user) {
       Alert.alert('Error', 'You must be logged in to save receipts.');
@@ -201,77 +161,6 @@ export default function HomeScreen(): React.ReactElement {
             <Text style={{ color: '#ff4444', marginBottom: 16 }}>{errorMsg}</Text>
           ) : null}
 
-          {isEditing && editForm ? (
-            <View style={styles.resultsCard}>
-              <Text style={[styles.resultsSubtitle, { marginBottom: 8 }]}>Edit Details</Text>
-              
-              <Text style={styles.inputLabel}>Merchant Name</Text>
-              <TextInput 
-                style={styles.input}
-                value={editForm.merchantName}
-                onChangeText={(t) => setEditForm({...editForm, merchantName: t})}
-                placeholder="Merchant"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-              />
-              
-              <Text style={styles.inputLabel}>Date</Text>
-              <TextInput 
-                style={styles.input}
-                value={editForm.date}
-                onChangeText={(t) => setEditForm({...editForm, date: t})}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-              />
-
-              <Text style={styles.inputLabel}>Gross Total ($)</Text>
-              <TextInput 
-                style={styles.input}
-                keyboardType="numeric"
-                value={editForm.grossTotal}
-                onChangeText={(t) => setEditForm({...editForm, grossTotal: t})}
-                placeholder="0.00"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-              />
-              
-              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Items</Text>
-              {editForm.items.map((item: any, i: number) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-                  <TextInput 
-                    style={[styles.input, { flex: 2 }]}
-                    value={item.name}
-                    onChangeText={(t) => {
-                      const newItems = [...editForm.items];
-                      newItems[i].name = t;
-                      setEditForm({...editForm, items: newItems});
-                    }}
-                    placeholder="Item name"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
-                  />
-                  <TextInput 
-                    style={[styles.input, { flex: 1 }]}
-                    keyboardType="numeric"
-                    value={item.amount}
-                    onChangeText={(t) => {
-                      const newItems = [...editForm.items];
-                      newItems[i].amount = t;
-                      setEditForm({...editForm, items: newItems});
-                    }}
-                    placeholder="0.00"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
-                  />
-                </View>
-              ))}
-
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 32 }}>
-                <TouchableOpacity style={[styles.retakeBtn, { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)' }]} activeOpacity={0.85} onPress={() => setIsEditing(false)}>
-                  <Text style={styles.retakeBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.proceedBtn, { flex: 2 }]} activeOpacity={0.85} onPress={saveEdits}>
-                  <Text style={styles.proceedBtnText}>Save Changes</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
           <View style={styles.resultsCard}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text style={styles.resultsSubtitle}>{aiResult.merchant?.name || "Unknown Merchant"}</Text>
@@ -327,16 +216,10 @@ export default function HomeScreen(): React.ReactElement {
               </Text>
             </View>
 
-            <View style={{ flexDirection: 'row', gap: 12, marginTop: 32 }}>
-              <TouchableOpacity style={[styles.retakeBtn, { flex: 1 }]} activeOpacity={0.85} onPress={startEditing}>
-                <Text style={styles.retakeBtnText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.proceedBtn, { flex: 2 }]} activeOpacity={0.85} onPress={handleLogReceipt}>
-                <Text style={styles.proceedBtnText}>Verify & Log</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleLogReceipt}>
+              <Text style={styles.proceedBtnText}>Verify & Log</Text>
+            </TouchableOpacity>
           </View>
-          )}
         </View>
       </ScrollView>
     );
@@ -388,7 +271,7 @@ export default function HomeScreen(): React.ReactElement {
           <Text style={styles.heroTitle}>{"Track an\nexpense"}</Text>
         </View>
         <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={pickImage}>
-          <FontAwesome name="upload" size={24} color="black" />
+          <Text style={{ fontSize: 18 }}>🖼️</Text>
         </TouchableOpacity>
       </Animated.View>
       <Text style={styles.hintText}>
@@ -685,22 +568,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '700',
-  },
-
-  inputLabel: {
-    color: 'rgba(240,236,227,0.7)',
-    fontSize: 14,
-    marginBottom: 6,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
-    color: '#f0ece3',
-    padding: 12,
-    fontSize: 15,
   },
 
   resultsCard: {

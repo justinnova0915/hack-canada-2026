@@ -1,6 +1,6 @@
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { usePathname, useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
     FadeIn,
@@ -16,55 +16,53 @@ const APP_ACCENT = "#e8a44a";
 const APP_TEXT = "#f0ece3";
 const APP_TEXT_MUTED = "#ccbfa8";
 
-const CustomNavBar: React.FC<BottomTabBarProps> = ({
-    state,
-    descriptors,
-    navigation,
-}) => {
+const ROUTES = [
+    { name: 'index', path: '/(tabs)', label: 'Home' },
+    { name: 'history', path: '/(tabs)/history', label: 'History' },
+    { name: 'stats', path: '/(tabs)/stats', label: 'Stats' },
+    { name: 'map', path: '/(tabs)/map', label: 'Map' },
+    { name: 'profile', path: '/(tabs)/profile', label: 'Profile' },
+];
+
+function getIconByRouteName(routeName: string, color: string) {
+    switch (routeName) {
+        case "index":
+            return <Feather name="home" size={18} color={color} />;
+        case "history":
+            return <Feather name="clock" size={18} color={color} />;
+        case "stats":
+            return <Feather name="pie-chart" size={18} color={color} />;
+        case "map":
+            return <Feather name="map" size={18} color={color} />;
+        case "profile":
+            return <FontAwesome6 name="circle-user" size={18} color={color} />;
+        default:
+            return <Feather name="home" size={18} color={color} />;
+    }
+}
+
+const CustomNavBar: React.FC = () => {
+    const router = useRouter();
+    const pathname = usePathname();
+
     return (
         <View style={styles.container}>
-            {state.routes.map((route, index) => {
-                if (["_sitemap", "+not-found"].includes(route.name)) return null;
-
-                const { options } = descriptors[route.key];
-                const label =
-                    options.tabBarLabel !== undefined
-                        ? options.tabBarLabel
-                        : options.title !== undefined
-                            ? options.title
-                            : route.name;
-
-                const isFocused = state.index === index;
+            {ROUTES.map((route) => {
+                const isFocused = pathname === route.path || pathname === `/${route.name}`;
 
                 const onPress = () => {
-                    const event = navigation.emit({
-                        type: "tabPress",
-                        target: route.key,
-                        canPreventDefault: true,
-                    });
-
-                    if (!isFocused && !event.defaultPrevented) {
-                        navigation.navigate(route.name, route.params);
+                    if (!isFocused) {
+                        router.push(route.path as any);
                     }
-                };
-
-                const onLongPress = () => {
-                    navigation.emit({
-                        type: "tabLongPress",
-                        target: route.key,
-                    });
                 };
 
                 return (
                     <AnimatedTouchableOpacity
                         layout={LinearTransition.springify().mass(0.5)}
-                        key={route.key}
+                        key={route.name}
                         onPress={onPress}
-                        onLongPress={onLongPress}
                         accessibilityRole="button"
                         accessibilityState={isFocused ? { selected: true } : {}}
-                        accessibilityLabel={options.tabBarAccessibilityLabel}
-                        testID={options.tabBarButtonTestID}
                         style={[
                             styles.tabItem,
                             {
@@ -83,7 +81,7 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({
                                 exiting={FadeOut.duration(200)}
                                 style={styles.text}
                             >
-                                {label as string}
+                                {route.label}
                             </Animated.Text>
                         )}
                     </AnimatedTouchableOpacity>
@@ -91,21 +89,6 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({
             })}
         </View>
     );
-
-    function getIconByRouteName(routeName: string, color: string) {
-        switch (routeName) {
-            case "index":
-                return <Feather name="home" size={18} color={color} />;
-            case "history":
-                return <Feather name="clock" size={18} color={color} />;
-            case "stats":
-                return <Feather name="pie-chart" size={18} color={color} />;
-            case "profile":
-                return <FontAwesome6 name="circle-user" size={18} color={color} />;
-            default:
-                return <Feather name="home" size={18} color={color} />;
-        }
-    }
 };
 
 const styles = StyleSheet.create({
