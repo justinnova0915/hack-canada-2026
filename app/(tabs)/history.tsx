@@ -109,7 +109,7 @@ export default function HistoryScreen() {
                   </View>
                 </View>
                 <View style={styles.rightCol}>
-                  <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
+                  <Text style={styles.amountText}>${tx.amount.toFixed(2)}</Text>
                   <Text style={styles.categoryText}>{tx.category}</Text>
                 </View>
               </View>

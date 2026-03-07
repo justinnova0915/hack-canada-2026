@@ -66,7 +66,6 @@ function LiquidLoading() {
     });
 
     const listener = fillAnim.addListener(({ value }) => {
-      // Once we've reached the target, never allow fill to drop below 0.62
       if (reachedTarget.current) {
         fillRef.current = Math.max(value, 0.62);
       } else {
@@ -153,6 +152,7 @@ function LiquidLoading() {
     </View>
   );
 }
+
 const liquidStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1117' },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', zIndex: 10 },
@@ -465,7 +465,6 @@ export default function HomeScreen(): React.ReactElement {
               )}
             </View>
 
-
             <View style={styles.divider} />
 
             <View style={styles.totalRow}>
@@ -552,8 +551,6 @@ export default function HomeScreen(): React.ReactElement {
         </TouchableOpacity>
       )}
 
-
-
       {cameraReady && (
         <>
           <View style={[styles.bracket, { top: insets.top + 12, left: 12 }, styles.bTL]} />
@@ -565,7 +562,7 @@ export default function HomeScreen(): React.ReactElement {
 
       {cameraReady && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-          <View style={[styles.topBar, { top: insets.top + 10, right: insets.right + 15 }]} pointerEvents="box-none">
+          <View style={[styles.topBar, { top: insets.top - 30, right: insets.right + 0 }]} pointerEvents="box-none">
             <TouchableOpacity style={styles.topPill} activeOpacity={0.8} onPress={pickImage}>
               <Feather name="image" size={16} color="#e8a44a" />
               <Text style={styles.topPillText}>Gallery</Text>
