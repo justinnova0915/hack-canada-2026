@@ -1,7 +1,5 @@
-import AntDesign from "@expo/vector-icons/AntDesign";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -13,8 +11,10 @@ import Animated, {
 const AnimatedTouchableOpacity =
     Animated.createAnimatedComponent(TouchableOpacity);
 
-const PRIMARY_COLOR = "#130057";
-const SECONDARY_COLOR = "#fff";
+const APP_BG = "#0d1117";
+const APP_ACCENT = "#e8a44a";
+const APP_TEXT = "#f0ece3";
+const APP_TEXT_MUTED = "#ccbfa8";
 
 const CustomNavBar: React.FC<BottomTabBarProps> = ({
     state,
@@ -48,19 +48,34 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({
                     }
                 };
 
+                const onLongPress = () => {
+                    navigation.emit({
+                        type: "tabLongPress",
+                        target: route.key,
+                    });
+                };
+
                 return (
                     <AnimatedTouchableOpacity
                         layout={LinearTransition.springify().mass(0.5)}
                         key={route.key}
                         onPress={onPress}
+                        onLongPress={onLongPress}
+                        accessibilityRole="button"
+                        accessibilityState={isFocused ? { selected: true } : {}}
+                        accessibilityLabel={options.tabBarAccessibilityLabel}
+                        testID={options.tabBarButtonTestID}
                         style={[
                             styles.tabItem,
-                            { backgroundColor: isFocused ? SECONDARY_COLOR : "transparent" },
+                            {
+                                backgroundColor: isFocused ? APP_ACCENT : "transparent",
+                                borderColor: isFocused ? APP_ACCENT : "transparent",
+                            },
                         ]}
                     >
                         {getIconByRouteName(
                             route.name,
-                            isFocused ? PRIMARY_COLOR : SECONDARY_COLOR
+                            isFocused ? APP_BG : APP_TEXT_MUTED
                         )}
                         {isFocused && (
                             <Animated.Text
@@ -81,12 +96,10 @@ const CustomNavBar: React.FC<BottomTabBarProps> = ({
         switch (routeName) {
             case "index":
                 return <Feather name="home" size={18} color={color} />;
-            case "search":
-                return <AntDesign name="search" size={18} color={color} />;
-            case "analytics":
+            case "history":
+                return <Feather name="clock" size={18} color={color} />;
+            case "stats":
                 return <Feather name="pie-chart" size={18} color={color} />;
-            case "wallet":
-                return <Ionicons name="wallet-outline" size={18} color={color} />;
             case "profile":
                 return <FontAwesome6 name="circle-user" size={18} color={color} />;
             default:
@@ -101,30 +114,34 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: PRIMARY_COLOR,
-        width: "80%",
+        backgroundColor: "rgba(13, 17, 23, 0.95)",
+        borderWidth: 1,
+        borderColor: "rgba(232, 164, 74, 0.28)",
+        width: "90%",
         alignSelf: "center",
-        bottom: 40,
+        bottom: 28,
         borderRadius: 40,
-        paddingHorizontal: 12,
-        paddingVertical: 15,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.45,
+        shadowRadius: 14,
+        elevation: 8,
     },
     tabItem: {
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
-        height: 36,
-        paddingHorizontal: 13,
-        borderRadius: 30,
+        height: 40,
+        paddingHorizontal: 12,
+        borderRadius: 24,
+        borderWidth: 1,
     },
     text: {
-        color: PRIMARY_COLOR,
+        color: APP_BG,
         marginLeft: 8,
-        fontWeight: "500",
+        fontWeight: "700",
     },
 });
 
