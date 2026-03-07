@@ -5,7 +5,9 @@ import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -169,10 +171,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { route: '/(tabs)', icon: 'home', label: 'Home' },
   { route: '/(tabs)/history', icon: 'clock', label: 'History' },
   { route: '/(tabs)/stats', icon: 'pie-chart', label: 'Stats' },
   { route: '/(tabs)/map', icon: 'map', label: 'Map' },
+  { route: '/(tabs)/profile', icon: 'user', label: 'Profile' }
 ];
 
 const BUBBLE_SIZE = 52;
@@ -221,19 +223,30 @@ function NavBubble() {
     outputRange: [0, 0, 1],
   });
 
+  const columnOpacity = expandAnim.interpolate({
+    inputRange: [0, 0.1, 1],
+    outputRange: [0, 0.35, 1],
+  });
+
+  const columnTranslateY = expandAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [10, 0],
+  });
+
   const chevronRotate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg'],
   });
 
-  const borderWidth = expandAnim.interpolate({
-    inputRange: [0, 0.1, 1],
-    outputRange: [0, 1, 1],
-  });
-
   return (
     <View style={navStyles.wrapper}>
-      <Animated.View style={[navStyles.column, { height: columnHeight, borderWidth }]}>
+      <Animated.View
+        pointerEvents={open ? 'auto' : 'none'}
+        style={[
+          navStyles.column,
+          { height: columnHeight, opacity: columnOpacity, transform: [{ translateY: columnTranslateY }] }
+        ]}
+      >
         <Animated.View style={[navStyles.columnInner, { opacity: itemsOpacity }]}>
           {NAV_ITEMS.map((item) => (
             <TouchableOpacity
@@ -268,6 +281,7 @@ const navStyles = StyleSheet.create({
     width: BUBBLE_SIZE,
     backgroundColor: 'rgba(13,17,23,0.92)',
     borderRadius: 26,
+    borderWidth: 1,
     borderColor: 'rgba(232,164,74,0.2)',
     overflow: 'hidden',
   },
@@ -311,7 +325,8 @@ export default function HomeScreen(): React.ReactElement {
   const cameraRef = useRef<CameraView>(null);
 
   const [aiResult, setAiResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [analyzingLoading, setAnalyzingLoading] = useState(false);
+  const [loggingLoading, setLoggingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -361,7 +376,7 @@ export default function HomeScreen(): React.ReactElement {
 
   const processImageWithAI = async (uri: string, base64: string | null) => {
     if (!base64) return;
-    setLoading(true);
+    setAnalyzingLoading(true);
     setErrorMsg('');
     try {
       const response: any = await uploadReceiptImage(uri, base64);
@@ -373,7 +388,7 @@ export default function HomeScreen(): React.ReactElement {
     } catch (e: any) {
       setErrorMsg('Error connecting to backend: ' + e.message);
     } finally {
-      setLoading(false);
+      setAnalyzingLoading(false);
     }
   };
 
@@ -412,27 +427,31 @@ export default function HomeScreen(): React.ReactElement {
     }
     if (!aiResult) return;
     try {
-      setLoading(true);
+      setLoggingLoading(true);
       await logReceipt(user.uid, aiResult);
-      Alert.alert('Added', 'Receipt added to your history.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            handleRetake();
-            router.push('/(tabs)/history');
-          },
-        },
-      ]);
+      handleRetake();
+      router.push({ pathname: '/(tabs)/history', params: { saved: '1' } });
     } catch (e: any) {
       Alert.alert('Error', 'Failed to log receipt: ' + e.message);
     } finally {
-      setLoading(false);
+      setLoggingLoading(false);
     }
   };
 
   // ── Loading — Liquid Wave ──────────────────────────────────────
-  if (loading) {
+  if (analyzingLoading) {
     return <LiquidLoading />;
+  }
+
+  if (loggingLoading) {
+    return (
+      <View style={styles.loadingScreen}>
+        <StatusBar barStyle="light-content" />
+        <Text style={styles.loadingTitle}>Verifying and Logging</Text>
+        <ActivityIndicator size="large" color="#e8a44a" style={{ marginBottom: 10 }} />
+        <Text style={styles.loadingSub}>Saving your receipt to history...</Text>
+      </View>
+    );
   }
 
   if (aiResult) {
@@ -462,9 +481,22 @@ export default function HomeScreen(): React.ReactElement {
             )}
             <View style={styles.merchantRow}>
               <Text style={styles.merchantName}>{aiResult.merchant?.name || 'Unknown'}</Text>
-              <View style={styles.tagPill}>
-                <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
-                <Text style={[styles.tagText, { marginTop: 4 }]}>{'Edit'}</Text>
+              <View style={styles.tagContainer}>
+                <View style={styles.tagPill}>
+                  <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
+                </View>
+                <TouchableOpacity style={{}} activeOpacity={0} onPress={() => {
+                  router.push({
+                    pathname: '/(tabs)/edit',
+                    params: {
+                      items: JSON.stringify(aiResult.items),
+                      merchant: JSON.stringify(aiResult.merchant),
+                      totals: JSON.stringify(aiResult.totals),
+                    },
+                  });
+                }}>
+                  <Feather name="edit" size={24} color="white" />
+                </TouchableOpacity>
               </View>
             </View>
             <Text style={styles.dateMuted}>{aiResult.date}</Text>
@@ -825,6 +857,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
+  loadingScreen: {
+    flex: 1,
+    backgroundColor: '#0d1117',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
   loadingTitle: {
     color: '#f0ece3',
     fontSize: 22,
@@ -895,11 +934,28 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 15,
   },
+  tagContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
   tagPill: {
     backgroundColor: 'rgba(232,164,74,0.1)',
     borderRadius: 20,
+<<<<<<< HEAD
     paddingHorizontal: 15,
     paddingVertical: 4,
+=======
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 5,
+  },
+  editPill: {
+    backgroundColor: 'rgba(232,164,74,0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+>>>>>>> 7366621234716bb9620f1449eb563ba082d1a248
   },
   tagText: {
     color: '#e8a44a',
@@ -907,8 +963,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  editTagText: {
-    marginTop: 4,
+  editText: {
+    color: '#e8a44a',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   dateMuted: {
     color: 'rgba(240,236,227,0.4)',

@@ -1,5 +1,5 @@
-import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity, Modal } from 'react-native';
 import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
@@ -7,10 +7,13 @@ import { getUserReceipts } from '../../services/receiptService';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
+  const router = useRouter();
+  const params = useLocalSearchParams<{ saved?: string }>();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const filteredTransactions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -76,9 +79,24 @@ export default function HistoryScreen() {
     }, [user])
   );
 
+  useEffect(() => {
+    if (loading) return;
+    if (params.saved !== '1') return;
+
+    setShowSavedBanner(true);
+    router.setParams({ saved: undefined });
+    const timer = setTimeout(() => setShowSavedBanner(false), 1500);
+    return () => clearTimeout(timer);
+  }, [loading, params.saved, router]);
+
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: 120 }]}>
+        {showSavedBanner && (
+          <View style={styles.savedBanner}>
+            <Text style={styles.savedBannerText}>Saved</Text>
+          </View>
+        )}
         <Text style={styles.sectionLabel}>PAPER TRAIL</Text>
         <Text style={styles.heroTitle}>Digital Ledger</Text>
 
@@ -178,6 +196,19 @@ const styles = StyleSheet.create({
     color: '#f0ece3',
     lineHeight: 40,
     marginBottom: 24,
+  },
+  savedBanner: {
+    alignSelf: 'center',
+    backgroundColor: '#2ecc71',
+    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  savedBannerText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   searchContainer: {
     flexDirection: 'row',

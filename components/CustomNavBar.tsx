@@ -1,5 +1,4 @@
 import Feather from "@expo/vector-icons/Feather";
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { usePathname, useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -25,20 +24,20 @@ const ROUTES = [
 ];
 
 function getIconByRouteName(routeName: string, color: string) {
-    switch (routeName) {
-        case "index":
-            return <Feather name="home" size={18} color={color} />;
+        switch (routeName) {
+            case "index":
+                return <Feather name="home" size={18} color={color} />;
         case "history":
             return <Feather name="clock" size={18} color={color} />;
         case "stats":
             return <Feather name="pie-chart" size={18} color={color} />;
-        case "map":
-            return <Feather name="map" size={18} color={color} />;
-        case "profile":
-            return <FontAwesome6 name="circle-user" size={18} color={color} />;
-        default:
-            return <Feather name="home" size={18} color={color} />;
-    }
+            case "map":
+                return <Feather name="map" size={18} color={color} />;
+            case "profile":
+                return <Feather name="user" size={18} color={color} />;
+            default:
+                return <Feather name="home" size={18} color={color} />;
+        }
 }
 
 const CustomNavBar: React.FC = () => {
