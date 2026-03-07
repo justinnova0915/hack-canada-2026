@@ -414,24 +414,25 @@ export default function HomeScreen(): React.ReactElement {
         </TouchableOpacity>
       )}
 
-      <View style={[styles.topBar, { top: insets.top + 19, right: insets.right + 5 }]} pointerEvents="box-none">
-        <TouchableOpacity style={styles.topPill} activeOpacity={0.8} onPress={pickImage}>
-          <Feather name="image" size={16} color="#e8a44a" />
-          <Text style={styles.topPillText}>Gallery</Text>
-        </TouchableOpacity>
-      </View>
+
 
       {cameraReady && (
         <>
           <View style={[styles.bracket, { top: insets.top + 12, left: 12 }, styles.bTL]} />
           <View style={[styles.bracket, { top: insets.top + 12, right: 12 }, styles.bTR]} />
-          <View style={[styles.bracket, { bottom: 140, left: 12 }, styles.bBL]} />
-          <View style={[styles.bracket, { bottom: 140, right: 12 }, styles.bBR]} />
+          <View style={[styles.bracket, { bottom: 12, left: 12 }, styles.bBL]} />
+          <View style={[styles.bracket, { bottom: 12, right: 12 }, styles.bBR]} />
         </>
       )}
 
       {cameraReady && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+          <View style={[styles.topBar, { top: insets.top + 10, right: insets.right + 15 }]} pointerEvents="box-none">
+            <TouchableOpacity style={styles.topPill} activeOpacity={0.8} onPress={pickImage}>
+              <Feather name="image" size={16} color="#e8a44a" />
+              <Text style={styles.topPillText}>Gallery</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.hintText}>Point at a receipt</Text>
 
           <View style={styles.controlsRow}>
@@ -469,7 +470,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  /* ── Top Bar ────────────────────────────────────── */
   topBar: {
     position: 'absolute',
     left: 0,
@@ -483,12 +483,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(13,17,23,0.7)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(232,164,74,0.2)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   topPillText: {
     color: '#e8a44a',
@@ -496,7 +496,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  /* ── Brackets ───────────────────────────────────── */
   bracket: {
     position: 'absolute',
     width: B,
@@ -577,7 +576,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* ── Permission ─────────────────────────────────── */
   permissionBox: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -605,7 +603,6 @@ const styles = StyleSheet.create({
     color: 'rgba(240,236,227,0.4)',
   },
 
-  /* ── Preview Bar ────────────────────────────────── */
   previewBar: {
     position: 'absolute',
     bottom: 0,
@@ -666,7 +663,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  /* ── Loading ────────────────────────────────────── */
   loadingTitle: {
     color: '#f0ece3',
     fontSize: 22,
@@ -686,7 +682,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(232,164,74,0.25)',
   },
 
-  /* ── Results ────────────────────────────────────── */
   resultsTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
