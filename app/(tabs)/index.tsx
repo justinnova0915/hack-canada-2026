@@ -137,28 +137,62 @@ export default function HomeScreen(): React.ReactElement {
           ) : null}
 
           <View style={styles.resultsCard}>
-             <Text style={styles.resultsSubtitle}>{aiResult.merchant || "Unknown Merchant"}</Text>
+             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={styles.resultsSubtitle}>{aiResult.merchant?.name || "Unknown Merchant"}</Text>
+                <Text style={styles.tag}>{aiResult.merchant?.category || "Misc"}</Text>
+             </View>
              <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 14, marginBottom: 16 }}>{aiResult.date}</Text>
              
+             {aiResult.location?.address && (
+                <View style={{ marginBottom: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
+                   <Text style={{ color: '#f0ece3', fontSize: 13 }}>📍 {aiResult.location.address}</Text>
+                </View>
+             )}
+
              <View style={{ marginBottom: 24 }}>
-                 {aiResult.expenses?.map((exp: any, i: number) => (
+                 {aiResult.items?.slice(0, 5).map((item: any, i: number) => (
                     <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                        <View style={{ flex: 1, paddingRight: 10 }}>
-                           <Text style={{ color: '#f0ece3', fontSize: 15, fontWeight: '500' }}>{exp.name}</Text>
-                           <Text style={{ color: 'rgba(232,164,74,0.8)', fontSize: 12, marginTop: 4 }}>{exp.category}</Text>
+                           <Text style={{ color: '#f0ece3', fontSize: 15, fontWeight: '500' }}>{item.name}</Text>
                        </View>
-                       <Text style={{ color: '#f0ece3', fontSize: 16, fontWeight: '700' }}>${exp.amount?.toFixed(2)}</Text>
+                       <Text style={{ color: '#f0ece3', fontSize: 16, fontWeight: '700' }}>${item.amount?.toFixed(2)}</Text>
                     </View>
                  ))}
+                 {aiResult.items?.length > 5 && (
+                     <Text style={{ color: 'rgba(240,236,227,0.5)', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>+ {aiResult.items.length - 5} more items...</Text>
+                 )}
              </View>
 
-             <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#e8a44a', fontSize: 18, fontWeight: '800' }}>Total</Text>
-                <Text style={{ color: '#e8a44a', fontSize: 20, fontWeight: '900' }}>${aiResult.total?.toFixed(2)}</Text>
+             <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingTop: 16, marginBottom: 16 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Subtotal</Text>
+                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.subtotal?.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tax & Fees</Text>
+                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tax?.toFixed(2)}</Text>
+                </View>
+                {aiResult.totals?.tip > 0 && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                     <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tip</Text>
+                     <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tip?.toFixed(2)}</Text>
+                  </View>
+                )}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                   <Text style={{ color: '#e8a44a', fontSize: 18, fontWeight: '800' }}>Gross Total</Text>
+                   <Text style={{ color: '#e8a44a', fontSize: 20, fontWeight: '900' }}>${aiResult.totals?.gross?.toFixed(2)}</Text>
+                </View>
+             </View>
+
+             <View style={{ backgroundColor: 'rgba(232,164,74,0.1)', padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={{ color: '#e8a44a', fontSize: 14 }}>Payment Source</Text>
+                <Text style={{ color: '#e8a44a', fontSize: 14, fontWeight: '600' }}>
+                   {aiResult.source?.paymentMethod} {aiResult.source?.cardIdentifier}
+                </Text>
              </View>
 
              <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleRetake}>
-                <Text style={styles.proceedBtnText}>Scan Another</Text>
+                <Text style={styles.proceedBtnText}>Verify & Log</Text>
              </TouchableOpacity>
           </View>
         </View>

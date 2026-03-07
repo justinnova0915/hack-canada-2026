@@ -11,18 +11,36 @@ exports.extractReceiptData = async (imageInput) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
-      Analyze this image of a receipt or transaction screenshot. Extract the following information and output ONLY a valid JSON object matching this structure:
+      Analyze this image of a receipt or transaction screenshot. Perform "Deep Metadata" extraction to output ONLY a valid JSON object matching this exact structure:
       {
-        "merchant": "Merchant Name (or 'Unknown')",
-        "total": 123.45 (number),
-        "date": "YYYY-MM-DD (or 'Unknown')",
-        "expenses": [
-          { "name": "Item Name", "amount": 10.00, "category": "Category Name" }
-        ]
+        "merchant": {
+          "name": "Standardized Merchant Name (e.g. 'Walmart' instead of 'WMT 3114')",
+          "category": "Primary category (e.g. Groceries, Dining, Transit)"
+        },
+        "totals": {
+          "gross": 123.45,
+          "subtotal": 110.00,
+          "tax": 8.45,
+          "tip": 5.00
+        },
+        "source": {
+          "paymentMethod": "Visa, MC, Amex, Cash, etc.",
+          "cardIdentifier": "**** 1234 (extract from receipt footer if available, else null)"
+        },
+        "items": [
+          { "name": "Item Name", "amount": 10.00 }
+        ],
+        "location": {
+          "address": "Extracted full address or ZIP/Postal code if available"
+        },
+        "date": "YYYY-MM-DD"
       }
-      For the category, choose the most appropriate one from this list: Food, Transport, Rent, Utilities, Entertainment, Necessary, Recurring, Debt, Miscellaneous.
-      If it's a tax or fee, categorize it as "Tax/Fee".
-      Do not include any markdown formatting like \`\`\`json in the output, just the raw JSON string.
+      For the merchant category, choose the most appropriate one from this hierarchy:
+      - Necessary: Rent, Groceries, Utilities, Insurance, Gas/Transit
+      - Miscellaneous: Dining, Entertainment, Hobbies, Shopping
+      - Recurring: Subscriptions, Gym
+      - Debt/Credit: Payments, Interest
+      If an item cannot be extracted, use null or 0 where appropriate. Do not include any markdown formatting like \`\`\`json in the output, just the raw JSON string.
     `;
 
     const base64Data = Buffer.isBuffer(imageInput) 
@@ -71,15 +89,29 @@ exports.extractReceiptData = async (imageInput) => {
 
 function getMockReceiptData() {
     return {
-        merchant: "Supermarket Inc",
-        total: 45.50,
-        date: "2026-03-07",
-        expenses: [
-            { name: "Apples", amount: 5.50, category: "Food" },
-            { name: "Bread", amount: 4.00, category: "Food" },
-            { name: "Laundry Detergent", amount: 16.00, category: "Necessary" },
-            { name: "Magazine", amount: 5.00, category: "Miscellaneous" },
-            { name: "Tax", amount: 5.00, category: "Tax/Fee" }
-        ]
+        merchant: {
+            name: "Supermarket Inc",
+            category: "Groceries"
+        },
+        totals: {
+            gross: 45.50,
+            subtotal: 40.50,
+            tax: 5.00,
+            tip: 0
+        },
+        source: {
+            paymentMethod: "Visa",
+            cardIdentifier: "**** 1234"
+        },
+        items: [
+            { name: "Apples", amount: 5.50 },
+            { name: "Bread", amount: 4.00 },
+            { name: "Laundry Detergent", amount: 16.00 },
+            { name: "Magazine", amount: 5.00 }
+        ],
+        location: {
+            address: "123 Main St, Cityville, 12345"
+        },
+        date: "2026-03-07"
     };
 }

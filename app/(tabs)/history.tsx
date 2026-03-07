@@ -2,37 +2,44 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function HistoryScreen() {
-  const transactions = [
-    { id: '1', merchant: 'Walmart', date: '2026-03-05', amount: 125.50, category: 'Necessary' },
-    { id: '2', merchant: 'Uber', date: '2026-03-04', amount: 18.20, category: 'Transport' },
-    { id: '3', merchant: 'Netflix', date: '2026-03-01', amount: 15.49, category: 'Recurring' },
-    { id: '4', merchant: 'Starbucks', date: '2026-02-28', amount: 6.50, category: 'Food' },
-    { id: '5', merchant: 'Rent', date: '2026-02-25', amount: 1200.00, category: 'Rent' },
-  ];
+  const transactions: any[] = [];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>TRANSACTION HISTORY</Text>
-      <Text style={styles.heroTitle}>Recent Logs</Text>
+      <Text style={styles.sectionLabel}>PAPER TRAIL</Text>
+      <Text style={styles.heroTitle}>Digital Ledger</Text>
+      
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <Text style={styles.searchPlaceholder}>Search by merchant, category, or amount...</Text>
+      </View>
 
       <View style={styles.listContainer}>
-        {transactions.map((tx) => (
-          <View key={tx.id} style={styles.transactionCard}>
-            <View style={styles.leftCol}>
-              <View style={styles.iconBox}>
-                <Text style={{ fontSize: 20 }}>💸</Text>
+        {transactions.length > 0 ? (
+          transactions.map((tx) => (
+            <View key={tx.id} style={styles.transactionCard}>
+              <View style={styles.leftCol}>
+                <View style={styles.iconBox}>
+                  <Text style={{ fontSize: 20 }}>💸</Text>
+                </View>
+                <View>
+                  <Text style={styles.merchantText}>{tx.merchant}</Text>
+                  <Text style={styles.dateText}>{tx.date}</Text>
+                </View>
               </View>
-              <View>
-                <Text style={styles.merchantText}>{tx.merchant}</Text>
-                <Text style={styles.dateText}>{tx.date}</Text>
+              <View style={styles.rightCol}>
+                <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
+                <Text style={styles.categoryText}>{tx.category}</Text>
               </View>
             </View>
-            <View style={styles.rightCol}>
-              <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
-              <Text style={styles.categoryText}>{tx.category}</Text>
-            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📭</Text>
+            <Text style={styles.emptyTitle}>No transactions yet</Text>
+            <Text style={styles.emptyDesc}>Snap a receipt on the home tab to start logging.</Text>
           </View>
-        ))}
+        )}
       </View>
     </ScrollView>
   );
@@ -60,7 +67,26 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#f0ece3',
     lineHeight: 40,
-    marginBottom: 32,
+    marginBottom: 24,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 12,
+  },
+  searchPlaceholder: {
+    color: 'rgba(240,236,227,0.4)',
+    fontSize: 14,
   },
   listContainer: {
     gap: 16,
@@ -111,4 +137,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'rgba(240,236,227,0.5)',
   },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 64,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+    opacity: 0.8,
+  },
+  emptyTitle: {
+    color: '#f0ece3',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  emptyDesc: {
+    color: 'rgba(240,236,227,0.5)',
+    fontSize: 14,
+    textAlign: 'center',
+    maxWidth: 240,
+  }
 });
