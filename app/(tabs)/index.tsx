@@ -1,3 +1,5 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -126,13 +128,12 @@ export default function HomeScreen(): React.ReactElement {
           {cameraReady && (
             <View style={styles.controlsRow}>
               <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
-                <Text style={{ fontSize: 22 }}>🔄</Text>
-                <Text style={styles.controlLabel}>Flip</Text>
+                <Octicons size={28} name="arrow-switch" color="#e8a44a" />
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
                 <View style={styles.captureInner}>
-                  <Text style={{ fontSize: 28 }}>📷</Text>
+                  <FontAwesome6 size={28} name="camera" color="#e8a44a" />
                 </View>
               </TouchableOpacity>
 

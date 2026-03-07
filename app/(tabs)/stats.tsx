@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { VictoryPie } from 'victory-native';
 
 export default function StatsScreen() {
   const { width: screenWidth } = useWindowDimensions();
@@ -15,27 +15,9 @@ export default function StatsScreen() {
   const total = macros.protein + macros.carbs + macros.fat;
 
   const data = [
-    {
-      name: 'Protein',
-      grams: macros.protein,
-      color: '#e8a44a',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Carbs',
-      grams: macros.carbs,
-      color: '#c9663c',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Fat',
-      grams: macros.fat,
-      color: '#7a4e2d',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
+    { x: 'Protein', y: macros.protein, color: '#e8a44a' },
+    { x: 'Carbs', y: macros.carbs, color: '#c9663c' },
+    { x: 'Fat', y: macros.fat, color: '#7a4e2d' },
   ];
 
   return (
@@ -45,21 +27,16 @@ export default function StatsScreen() {
 
       <View style={styles.chartBox}>
         {/* Donut Chart */}
-        <PieChart
+        <VictoryPie
           data={data}
           width={chartSize}
           height={chartSize}
-          chartConfig={{
-            color: (opacity = 1) => `rgba(240, 236, 227, ${opacity})`,
-            backgroundColor: 'transparent',
-            backgroundGradientFrom: '#0d1117',
-            backgroundGradientTo: '#0d1117',
+          innerRadius={chartSize * 0.35}
+          colorScale={data.map(d => d.color)}
+          labels={() => null}
+          style={{
+            data: { stroke: 'transparent' }
           }}
-          accessor="grams"
-          backgroundColor="transparent"
-          paddingLeft="0"
-          hasLegend={false}
-          absolute
         />
 
         {/* Center label */}
@@ -72,12 +49,12 @@ export default function StatsScreen() {
       {/* Legend */}
       <View style={styles.legend}>
         {data.map((item) => (
-          <View key={item.name} style={styles.legendItem}>
+          <View key={item.x} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-            <Text style={styles.legendName}>{item.name}</Text>
-            <Text style={styles.legendValue}>{item.grams}g</Text>
+            <Text style={styles.legendName}>{item.x}</Text>
+            <Text style={styles.legendValue}>{item.y}g</Text>
             <Text style={styles.legendPct}>
-              {Math.round((item.grams / total) * 100)}%
+              {Math.round((item.y / total) * 100)}%
             </Text>
           </View>
         ))}
@@ -149,15 +126,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   legendValue: {
-    color: 'rgba(240,236,227,0.6)',
-    fontSize: 13,
-    marginRight: 8,
+    color: '#f0ece3',
+    fontSize: 14,
+    fontWeight: '700',
   },
   legendPct: {
-    color: '#e8a44a',
-    fontSize: 13,
-    fontWeight: '700',
-    width: 36,
+    color: 'rgba(240,236,227,0.5)',
+    fontSize: 12,
+    width: 40,
     textAlign: 'right',
   },
 });
