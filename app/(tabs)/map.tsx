@@ -112,6 +112,7 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   mapFrame: {
-    flex: 1,
-  },
+  flex: 1,
+  marginBottom: 90,
+},
 });

@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
@@ -8,7 +8,27 @@ import { getUserReceipts } from '../../services/receiptService';
 export default function HistoryScreen() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const filteredTransactions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return transactions;
+
+    return transactions.filter((tx) => {
+      const merchant = String(tx.merchant || '').toLowerCase();
+      const category = String(tx.category || '').toLowerCase();
+      const amount = Number(tx.amount || 0).toFixed(2);
+      const date = String(tx.date || '').toLowerCase();
+
+      return (
+        merchant.includes(q) ||
+        category.includes(q) ||
+        amount.includes(q) ||
+        date.includes(q)
+      );
+    });
+  }, [transactions, searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -62,14 +82,22 @@ export default function HistoryScreen() {
 
         <View style={styles.searchContainer}>
           <Text style={styles.searchIcon}>🔍</Text>
-          <Text style={styles.searchPlaceholder}>Search by merchant, category, or amount...</Text>
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by merchant, category, amount, or date..."
+            placeholderTextColor="rgba(240,236,227,0.4)"
+            style={styles.searchInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
         </View>
 
         <View style={styles.listContainer}>
           {loading ? (
             <ActivityIndicator size="large" color="#e8a44a" style={{ marginTop: 40 }} />
-          ) : transactions.length > 0 ? (
-            transactions.map((tx) => (
+          ) : filteredTransactions.length > 0 ? (
+            filteredTransactions.map((tx) => (
               <View key={tx.id} style={styles.transactionCard}>
                 <View style={styles.leftCol}>
                   <View style={styles.iconBox}>
@@ -86,6 +114,12 @@ export default function HistoryScreen() {
                 </View>
               </View>
             ))
+          ) : transactions.length > 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyIcon}>🔎</Text>
+              <Text style={styles.emptyTitle}>No matching transactions</Text>
+              <Text style={styles.emptyDesc}>Try a different merchant, category, amount, or date.</Text>
+            </View>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>📭</Text>
@@ -142,6 +176,12 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     color: 'rgba(240,236,227,0.4)',
     fontSize: 14,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#f0ece3',
+    fontSize: 14,
+    paddingVertical: 0,
   },
   listContainer: {
     gap: 16,
