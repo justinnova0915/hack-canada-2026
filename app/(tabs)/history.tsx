@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity, Modal } from 'react-native';
 import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
@@ -10,6 +10,7 @@ export default function HistoryScreen() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const filteredTransactions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -54,7 +55,8 @@ export default function HistoryScreen() {
                 merchant: data.merchant?.name || 'Unknown',
                 date: data.date || 'Unknown Date',
                 amount: data.totals?.gross || 0,
-                category: data.merchant?.category || 'Misc'
+                category: data.merchant?.category || 'Misc',
+                imageUrl: data.imageUrl || null
               };
             });
             setTransactions(formattedTransactions);
@@ -100,16 +102,22 @@ export default function HistoryScreen() {
             filteredTransactions.map((tx) => (
               <View key={tx.id} style={styles.transactionCard}>
                 <View style={styles.leftCol}>
-                  <View style={styles.iconBox}>
-                    <Text style={{ fontSize: 20 }}>💸</Text>
-                  </View>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => { if (tx.imageUrl) setSelectedImage(tx.imageUrl) }}>
+                    {tx.imageUrl ? (
+                      <Image source={{ uri: tx.imageUrl }} style={styles.iconBox} />
+                    ) : (
+                      <View style={styles.iconBox}>
+                        <Text style={{ fontSize: 20 }}>💸</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
                   <View>
                     <Text style={styles.merchantText}>{tx.merchant}</Text>
                     <Text style={styles.dateText}>{tx.date}</Text>
                   </View>
                 </View>
                 <View style={styles.rightCol}>
-                  <Text style={styles.amountText}>-${tx.amount.toFixed(2)}</Text>
+                  <Text style={styles.amountText}>${tx.amount.toFixed(2)}</Text>
                   <Text style={styles.categoryText}>{tx.category}</Text>
                 </View>
               </View>
@@ -129,6 +137,19 @@ export default function HistoryScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Full Screen Image Modal */}
+      <Modal visible={!!selectedImage} transparent animationType="fade" onRequestClose={() => setSelectedImage(null)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.closeBtn} activeOpacity={0.8} onPress={() => setSelectedImage(null)}>
+            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Close</Text>
+          </TouchableOpacity>
+          {selectedImage && (
+            <Image source={{ uri: selectedImage }} style={styles.fullScreenImage} resizeMode="contain" />
+          )}
+        </View>
+      </Modal>
+
       <CustomNavBar />
     </>
   );
@@ -208,6 +229,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(232,164,74,0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   merchantText: {
     fontSize: 16,
@@ -253,5 +275,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     maxWidth: 240,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    zIndex: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 20,
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
   }
 });

@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 
 const getApiBaseUrl = () => {
     // Both platforms will use the production Firebase Cloud Function URL
@@ -11,9 +10,9 @@ export const uploadReceiptImage = async (imageUri, base64) => {
     if (!base64) {
         throw new Error("Base64 image data is required for Firebase Functions upload.");
     }
-    
+
     console.log(`Sending base64 JSON payload to ${API_BASE_URL}/api/upload-receipt-base64`);
-    
+
     try {
         const response = await fetch(`${API_BASE_URL}/api/upload-receipt-base64`, {
             method: 'POST',
