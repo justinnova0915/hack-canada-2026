@@ -301,6 +301,7 @@ const navStyles = StyleSheet.create({
 /* ── Main Screen ────────────────────────────────────────────────── */
 
 export default function HomeScreen(): React.ReactElement {
+  const router = useRouter();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -403,8 +404,15 @@ export default function HomeScreen(): React.ReactElement {
     try {
       setLoading(true);
       await logReceipt(user.uid, aiResult);
-      Alert.alert('Success', 'Receipt logged successfully!');
-      handleRetake();
+      Alert.alert('Added', 'Receipt added to your history.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            handleRetake();
+            router.push('/(tabs)/history');
+          },
+        },
+      ]);
     } catch (e: any) {
       Alert.alert('Error', 'Failed to log receipt: ' + e.message);
     } finally {
