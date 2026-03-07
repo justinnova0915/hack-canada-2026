@@ -48,7 +48,6 @@ export default function HomeScreen(): React.ReactElement {
     console.log('Proceeding with photo:', photoUri);
   };
 
-  // ── Photo Preview ──────────────────────────────────────────────
   if (photoUri) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -79,8 +78,6 @@ export default function HomeScreen(): React.ReactElement {
       </ScrollView>
     );
   }
-
-  // ── Permission Gate ────────────────────────────────────────────
   const cameraReady = permission?.granted;
 
   return (
@@ -150,7 +147,7 @@ export default function HomeScreen(): React.ReactElement {
             </TouchableOpacity>
 
             <View style={styles.controlBtn}>
-              {/* Spacer for symmetry */}
+              { }
               <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
               <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
             </View>
@@ -209,7 +206,6 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
 
-  /* ── Camera Card ────────────────────────────────── */
   cameraCard: {
     width: '100%',
     aspectRatio: 3 / 4,
@@ -223,7 +219,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  /* ── Permission Placeholder ─────────────────────── */
   permissionBox: {
     flex: 1,
     alignItems: 'center',
@@ -241,7 +236,6 @@ const styles = StyleSheet.create({
     color: 'rgba(240,236,227,0.45)',
   },
 
-  /* ── Viewfinder Brackets ────────────────────────── */
   bracket: {
     position: 'absolute',
     width: BRACKET_SIZE,
@@ -277,7 +271,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 6,
   },
 
-  /* ── Controls ───────────────────────────────────── */
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,7 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* ── Hint ───────────────────────────────────────── */
   hintText: {
     textAlign: 'center',
     fontSize: 13,
@@ -330,7 +322,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
 
-  /* ── Preview ────────────────────────────────────── */
   previewCard: {
     width: '100%',
     aspectRatio: 3 / 4,
