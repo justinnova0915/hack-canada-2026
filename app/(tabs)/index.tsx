@@ -5,6 +5,7 @@ import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
 import {
   Alert,
   Animated,
@@ -454,18 +455,17 @@ export default function HomeScreen(): React.ReactElement {
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
           <View style={styles.resultsCard}>
-            {aiResult.imageUrl && (
-              <Image 
-                source={{ uri: aiResult.imageUrl }} 
-                style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 16 }} 
-                resizeMode="cover" 
-              />
-            )}
             <View style={styles.merchantRow}>
               <Text style={styles.merchantName}>{aiResult.merchant?.name || 'Unknown'}</Text>
-              <View style={styles.tagPill}>
-                <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
-                <Text style={[styles.tagText, { marginTop: 4 }]}>{'Edit'}</Text>
+              <View style={styles.tagContainer}>
+                <View style={styles.tagPill}>
+                  <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
+                </View>
+                <TouchableOpacity style={{}} activeOpacity={0} onPress={() => {
+                  // Handle edit action here
+                }}>
+                  <Feather name="edit" size={24} color="white" />
+                </TouchableOpacity>
               </View>
             </View>
             <Text style={styles.dateMuted}>{aiResult.date}</Text>
@@ -896,11 +896,23 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 12,
   },
+  tagContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
   tagPill: {
     backgroundColor: 'rgba(232,164,74,0.1)',
     borderRadius: 20,
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
+    marginTop: 5,
+  },
+  editPill: {
+    backgroundColor: 'rgba(232,164,74,0.1)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   tagText: {
     color: '#e8a44a',
@@ -908,8 +920,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
   },
-  editTagText: {
-    marginTop: 4,
+  editText: {
+    color: '#e8a44a',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   dateMuted: {
     color: 'rgba(240,236,227,0.4)',
