@@ -1,89 +1,77 @@
 import React from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+
+type MacroData = {
+  value: number;
+  color: string;
+  name: string;
+  max: number;
+};
 
 export default function StatsScreen() {
-  const { width: screenWidth } = useWindowDimensions();
-  const chartSize = Math.min(screenWidth * 0.55, 220);
-
   const macros = {
-    protein: 80,
-    carbs: 210,
-    fat: 65,
+    protein: { current: 80, goal: 150, color: '#e8a44a' },
+    carbs: { current: 210, goal: 300, color: '#c9663c' },
+    fat: { current: 65, goal: 80, color: '#7a4e2d' },
   };
 
-  const total = macros.protein + macros.carbs + macros.fat;
-
-  const data = [
-    {
-      name: 'Protein',
-      grams: macros.protein,
-      color: '#e8a44a',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Carbs',
-      grams: macros.carbs,
-      color: '#c9663c',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
-    {
-      name: 'Fat',
-      grams: macros.fat,
-      color: '#7a4e2d',
-      legendFontColor: '#f0ece3',
-      legendFontSize: 12,
-    },
-  ];
+  const totalCurrent = macros.protein.current + macros.carbs.current + macros.fat.current;
 
   return (
-    <View style={styles.container}>
-
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.sectionLabel}>TODAY&apos;S MACROS</Text>
 
-      <View style={styles.chartBox}>
-        {/* Donut Chart */}
-        <PieChart
-          data={data}
-          width={chartSize}
-          height={chartSize}
-          chartConfig={{
-            color: (opacity = 1) => `rgba(240, 236, 227, ${opacity})`,
-            backgroundColor: 'transparent',
-            backgroundGradientFrom: '#0d1117',
-            backgroundGradientTo: '#0d1117',
-          }}
-          accessor="grams"
-          backgroundColor="transparent"
-          paddingLeft="0"
-          hasLegend={false}
-          absolute
-        />
+      {/* Hero Summary Card */}
+      <View style={styles.summaryCard}>
+        <Text style={styles.totalValue}>{totalCurrent}g</Text>
+        <Text style={styles.totalSub}>Total Consumed</Text>
+      </View>
 
-        {/* Center label */}
-        <View style={styles.centerLabel}>
-          <Text style={styles.centerTotal}>{total}g</Text>
-          <Text style={styles.centerSub}>total</Text>
+      {/* Macro Progress Bars */}
+      <View style={styles.statsContainer}>
+        {Object.entries(macros).map(([key, data]) => {
+          const percentage = Math.min((data.current / data.goal) * 100, 100);
+
+          return (
+            <View key={key} style={styles.macroRow}>
+              <View style={styles.macroHeader}>
+                <Text style={styles.macroName}>{key.toUpperCase()}</Text>
+                <Text style={styles.macroDetail}>
+                  <Text style={styles.currentWeight}>{data.current}g</Text>
+                  <Text style={styles.goalWeight}> / {data.goal}g</Text>
+                </Text>
+              </View>
+
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    { backgroundColor: data.color, width: `${percentage}%` }
+                  ]}
+                />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Composition Breakdown */}
+      <View style={styles.breakdownBox}>
+        <Text style={styles.breakdownTitle}>Composition</Text>
+        <View style={styles.compositionBar}>
+          {Object.entries(macros).map(([key, data]) => (
+            <View
+              key={key}
+              style={{
+                flex: data.current,
+                backgroundColor: data.color,
+                height: '100%'
+              }}
+            />
+          ))}
         </View>
       </View>
-
-      {/* Legend */}
-      <View style={styles.legend}>
-        {data.map((item) => (
-          <View key={item.name} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-            <Text style={styles.legendName}>{item.name}</Text>
-            <Text style={styles.legendValue}>{item.grams}g</Text>
-            <Text style={styles.legendPct}>
-              {Math.round((item.grams / total) * 100)}%
-            </Text>
-          </View>
-        ))}
-      </View>
-
-    </View>
+    </ScrollView>
   );
 }
 
@@ -91,6 +79,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0d1117',
+  },
+  content: {
     padding: 24,
     paddingTop: 64,
   },
@@ -100,64 +90,78 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: '#e8a44a',
     opacity: 0.8,
-    marginBottom: 20,
+    marginBottom: 24,
   },
-  chartBox: {
-    width: '55%',
-    minWidth: 180,
-    maxWidth: 220,
-    aspectRatio: 1,
+  summaryCard: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
     borderRadius: 24,
-    justifyContent: 'center',
+    padding: 32,
     alignItems: 'center',
-    position: 'relative',
+    marginBottom: 32,
   },
-  centerLabel: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  centerTotal: {
+  totalValue: {
     color: '#f0ece3',
-    fontSize: 22,
+    fontSize: 42,
     fontWeight: '900',
   },
-  centerSub: {
+  totalSub: {
     color: 'rgba(240,236,227,0.5)',
-    fontSize: 11,
+    fontSize: 14,
+    marginTop: 4,
   },
-  legend: {
-    marginTop: 24,
+  statsContainer: {
+    gap: 24,
+  },
+  macroRow: {
+    gap: 8,
+  },
+  macroHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  macroName: {
+    color: '#f0ece3',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  macroDetail: {
+    fontSize: 14,
+  },
+  currentWeight: {
+    color: '#f0ece3',
+    fontWeight: '700',
+  },
+  goalWeight: {
+    color: 'rgba(240,236,227,0.4)',
+  },
+  progressTrack: {
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  breakdownBox: {
+    marginTop: 40,
     gap: 12,
   },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  legendName: {
-    color: '#f0ece3',
-    fontSize: 14,
+  breakdownTitle: {
+    color: 'rgba(240,236,227,0.5)',
+    fontSize: 12,
     fontWeight: '600',
-    flex: 1,
   },
-  legendValue: {
-    color: 'rgba(240,236,227,0.6)',
-    fontSize: 13,
-    marginRight: 8,
-  },
-  legendPct: {
-    color: '#e8a44a',
-    fontSize: 13,
-    fontWeight: '700',
-    width: 36,
-    textAlign: 'right',
-  },
+  compositionBar: {
+    height: 12,
+    flexDirection: 'row',
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  }
 });

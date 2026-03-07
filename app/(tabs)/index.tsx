@@ -1,3 +1,5 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -28,7 +30,7 @@ export default function HomeScreen(): React.ReactElement {
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
-
+  const pulseAnim = useRef(new Animated.Value(1)).current;
   const toggleFacing = (current: CameraType): CameraType =>
     current === 'back' ? 'front' : 'back';
 
@@ -37,7 +39,14 @@ export default function HomeScreen(): React.ReactElement {
       Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 700, useNativeDriver: true }),
     ]).start();
-  }, [fadeAnim, slideAnim]);
+
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.35, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [fadeAnim, slideAnim, pulseAnim]);
 
   useEffect(() => {
     return sound
@@ -273,15 +282,17 @@ export default function HomeScreen(): React.ReactElement {
           {cameraReady && (
             <View style={styles.controlsRow}>
               <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
-                <Text style={{ fontSize: 22 }}>🔄</Text>
-                <Text style={styles.controlLabel}>Flip</Text>
+                <Octicons size={28} name="arrow-switch" color="#e8a44a" />
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
-                <View style={styles.captureInner}>
-                  <Text style={{ fontSize: 28 }}>📷</Text>
-                </View>
-              </TouchableOpacity>
+              <View style={styles.captureWrapper}>
+                <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
+                <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
+                  <View style={styles.captureInner}>
+                    <FontAwesome6 size={28} name="camera" color="#e8a44a" />
+                  </View>
+                </TouchableOpacity>
+              </View>
 
               <View style={styles.controlBtn}>
                 <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
@@ -443,6 +454,12 @@ const styles = StyleSheet.create({
     color: 'rgba(240,236,227,0.5)',
     letterSpacing: 0.5,
   },
+  captureWrapper: {
+    width: 100,
+    height: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   captureOuter: {
     width: 76,
     height: 76,
@@ -451,6 +468,14 @@ const styles = StyleSheet.create({
     borderColor: '#e8a44a',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pulseRing: {
+    position: 'absolute',
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 2,
+    borderColor: 'rgba(232, 164, 74, 0.4)',
   },
   captureInner: {
     width: 62,
