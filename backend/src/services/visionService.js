@@ -1,4 +1,9 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const NodeGeocoder = require('node-geocoder');
+
+const geocoder = NodeGeocoder({
+  provider: 'openstreetmap'
+});
 
 exports.extractReceiptData = async (imageInput) => {
   try {
@@ -74,6 +79,20 @@ exports.extractReceiptData = async (imageInput) => {
       }
 
       const receiptData = JSON.parse(text.trim());
+
+      // Attempt to geocode the address
+      if (receiptData.location && receiptData.location.address) {
+        try {
+          const res = await geocoder.geocode(receiptData.location.address);
+          if (res && res.length > 0) {
+            receiptData.location.latitude = res[0].latitude;
+            receiptData.location.longitude = res[0].longitude;
+          }
+        } catch (geocodeErr) {
+          console.warn('[Vision Service Warning] Geocoding failed:', geocodeErr.message);
+        }
+      }
+
       return receiptData;
 
     } catch (apiError) {
@@ -110,7 +129,9 @@ function getMockReceiptData() {
             { name: "Magazine", amount: 5.00 }
         ],
         location: {
-            address: "123 Main St, Cityville, 12345"
+            address: "123 Main St, Cityville, 12345",
+            latitude: 43.6532,
+            longitude: -79.3832
         },
         date: "2026-03-07"
     };

@@ -1,19 +1,148 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { getUserReceipts } from '../../services/receiptService';
+import { useFocusEffect } from 'expo-router';
 
 export default function StatsScreen() {
-  const expenses = {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [expenses, setExpenses] = useState({
     necessary: { current: 0, goal: 1500, color: '#e8a44a', label: 'Necessary' },
     miscellaneous: { current: 0, goal: 300, color: '#c9663c', label: 'Miscellaneous' },
     recurring: { current: 0, goal: 400, color: '#9c8166', label: 'Recurring' }
-  };
+  });
+  const [totalCurrent, setTotalCurrent] = useState(0);
+  const [avgDaily, setAvgDaily] = useState(0);
+  const [currentDaily, setCurrentDaily] = useState(0);
+  const [cards, setCards] = useState<any[]>([]);
 
-  const cards: any[] = [];
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
 
-  const totalCurrent = Object.values(expenses).reduce((acc, curr) => acc + curr.current, 0);
-  const avgDaily = 0;
-  const currentDaily = 0;
+      const fetchStats = async () => {
+        if (!user) {
+          if (isActive) setLoading(false);
+          return;
+        }
+
+        try {
+          if (isActive) setLoading(true);
+          const receipts = await getUserReceipts(user.uid);
+          
+          if (!isActive) return;
+
+          let necessaryTotal = 0;
+          let miscTotal = 0;
+          let recurringTotal = 0;
+
+          let todayTotal = 0;
+          let last30DaysTotal = 0;
+
+          const cardsMap: Record<string, { amount: number, name: string, last4: string, color: string }> = {};
+          const cardColors = ['#e8a44a', '#c9663c', '#9c8166', '#5c6d70', '#837b7d'];
+
+          const now = new Date();
+          const todayString = now.toISOString().split('T')[0];
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+          receipts.forEach(r => {
+            const data = r.receiptData || {};
+            const amount = data.totals?.gross || 0;
+            const category = (data.merchant?.category || 'Misc').toLowerCase();
+            const dateStr = data.date || '';
+
+            // Categorization
+            if (category.includes('grocer') || category.includes('supermarket') || category.includes('food') || category.includes('transit') || category.includes('health') || category.includes('gas') || category.includes('pharmacy') || category.includes('restaurant')) {
+              necessaryTotal += amount;
+            } else if (category.includes('subscript') || category.includes('insur') || category.includes('phone') || category.includes('internet') || category.includes('utilit')) {
+              recurringTotal += amount;
+            } else {
+              miscTotal += amount;
+            }
+
+            // Dates and Velocity
+            let receiptDate = new Date();
+            if (dateStr) {
+              const parsedDate = new Date(dateStr);
+              if (!isNaN(parsedDate.getTime())) {
+                receiptDate = parsedDate;
+              }
+            }
+
+            if (dateStr.startsWith(todayString) || receiptDate.toISOString().split('T')[0] === todayString) {
+              todayTotal += amount;
+            }
+
+            if (receiptDate >= thirtyDaysAgo) {
+              last30DaysTotal += amount;
+            }
+
+            // Cards
+            const cardIdentifier = data.source?.cardIdentifier;
+            if (cardIdentifier) {
+              if (!cardsMap[cardIdentifier]) {
+                cardsMap[cardIdentifier] = {
+                  amount: 0,
+                  name: data.source?.paymentMethod || 'Credit Card',
+                  last4: cardIdentifier.slice(-4),
+                  color: cardColors[Object.keys(cardsMap).length % cardColors.length]
+                };
+              }
+              cardsMap[cardIdentifier].amount += amount;
+            } else if (data.source?.paymentMethod) {
+               const paymentMethod = data.source.paymentMethod;
+               if (!cardsMap[paymentMethod]) {
+                  cardsMap[paymentMethod] = {
+                     amount: 0,
+                     name: paymentMethod,
+                     last4: '0000',
+                     color: cardColors[Object.keys(cardsMap).length % cardColors.length]
+                  };
+               }
+               cardsMap[paymentMethod].amount += amount;
+            }
+          });
+
+          setExpenses(prev => ({
+            necessary: { ...prev.necessary, current: Math.round(necessaryTotal * 100) / 100 },
+            miscellaneous: { ...prev.miscellaneous, current: Math.round(miscTotal * 100) / 100 },
+            recurring: { ...prev.recurring, current: Math.round(recurringTotal * 100) / 100 }
+          }));
+
+          setTotalCurrent(Math.round((necessaryTotal + miscTotal + recurringTotal) * 100) / 100);
+          setCurrentDaily(todayTotal);
+          setAvgDaily(last30DaysTotal / 30);
+          setCards(Object.values(cardsMap).sort((a, b) => b.amount - a.amount).map(c => ({ ...c, amount: Math.round(c.amount * 100) / 100 })));
+
+        } catch (error) {
+          console.error('Failed to fetch stats', error);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+
+      fetchStats();
+
+      return () => {
+        isActive = false;
+      };
+    }, [user])
+  );
+
   const velocityIncrease = avgDaily > 0 ? ((currentDaily - avgDaily) / avgDaily * 100).toFixed(1) : '0.0';
+  const velocityTrendIcon = currentDaily > avgDaily ? '📈' : '📉';
+  const velocityTrendColor = currentDaily > avgDaily ? 'rgba(255, 107, 107, 0.1)' : 'rgba(107, 255, 150, 0.1)';
+  const velocityTrendText = avgDaily === 0 ? "Not enough data to calculate trend." : `You are spending ${Math.abs(Number(velocityIncrease))}% ${currentDaily > avgDaily ? 'more' : 'less'} than your 30-day average.`;
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#e8a44a" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -21,8 +150,8 @@ export default function StatsScreen() {
 
       {/* Hero Summary Card */}
       <View style={styles.summaryCard}>
-        <Text style={styles.totalValue}>${totalCurrent.toLocaleString()}</Text>
-        <Text style={styles.totalSub}>Total Spent This Month</Text>
+        <Text style={styles.totalValue}>${totalCurrent.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+        <Text style={styles.totalSub}>Total Spent</Text>
       </View>
 
       {/* The Big Three breakdown */}
@@ -52,7 +181,7 @@ export default function StatsScreen() {
               <View key={key} style={styles.legendItem}>
                  <View style={[styles.legendDot, { backgroundColor: data.color }]} />
                  <Text style={styles.legendLabel}>{data.label}</Text>
-                 <Text style={styles.legendValue}>${data.current}</Text>
+                 <Text style={styles.legendValue}>${data.current.toFixed(2)}</Text>
               </View>
            ))}
         </View>
@@ -75,9 +204,9 @@ export default function StatsScreen() {
             </View>
         </View>
 
-        <View style={styles.velocityTrend}>
-            <Text style={styles.trendIcon}>➖</Text>
-            <Text style={styles.trendText}>Not enough data to calculate trend.</Text>
+        <View style={[styles.velocityTrend, { backgroundColor: avgDaily > 0 ? velocityTrendColor : 'rgba(255, 107, 107, 0.1)' }]}>
+            <Text style={styles.trendIcon}>{avgDaily > 0 ? velocityTrendIcon : '➖'}</Text>
+            <Text style={styles.trendText}>{velocityTrendText}</Text>
         </View>
       </View>
 
@@ -99,7 +228,7 @@ export default function StatsScreen() {
                             </View>
                         </View>
                         <View style={styles.creditCardStats}>
-                            <Text style={styles.creditCardAmount}>${card.amount}</Text>
+                            <Text style={styles.creditCardAmount}>${card.amount.toFixed(2)}</Text>
                             <Text style={styles.creditCardPercent}>{percentage}%</Text>
                         </View>
                     </View>

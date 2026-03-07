@@ -27,7 +27,7 @@ export default function MapComponent({ transactions = [] }: { transactions: any[
                 loading="lazy"
                 allowFullScreen
                 referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY&center=${lat},${lng}&zoom=12&maptype=roadmap`}
+                src={`https://maps.google.com/maps?q=${lat},${lng}&z=12&output=embed`}
             ></iframe>
 
             <View style={styles.overlay}>

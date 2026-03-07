@@ -1,11 +1,65 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useAuth } from '../../context/AuthContext';
+import { getUserReceipts } from '../../services/receiptService';
 
 // @ts-ignore: Metro resolves .native or .web automatically at runtime
 import MapComponent from '../../components/MapComponent';
 
 export default function MapScreen() {
-  const transactions: any[] = [];
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchReceipts = async () => {
+        if (!user) {
+          if (isActive) {
+            setTransactions([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        try {
+          if (isActive) setLoading(true);
+          const receipts = await getUserReceipts(user.uid);
+          
+          if (isActive) {
+            const mappedTransactions = receipts.map((r) => {
+              const data = r.receiptData || {};
+              // Add a slight random offset so markers don't overlap completely if they don't have distinct coordinates
+              const latOffset = (Math.random() - 0.5) * 0.02;
+              const lngOffset = (Math.random() - 0.5) * 0.02;
+
+              return {
+                id: r.id,
+                latitude: (data.location as any)?.latitude || (43.6532 + latOffset), // Default Toronto Latitude with jitter
+                longitude: (data.location as any)?.longitude || (-79.3832 + lngOffset), // Default Toronto Longitude with jitter
+                title: data.merchant?.name || 'Unknown Merchant',
+                description: `$${data.totals?.gross?.toFixed(2) || '0.00'} - ${data.date || 'Unknown Date'}`,
+              };
+            });
+            setTransactions(mappedTransactions);
+          }
+        } catch (error) {
+          console.error('Failed to fetch map receipts', error);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+
+      fetchReceipts();
+
+      return () => {
+        isActive = false;
+      };
+    }, [user])
+  );
 
   return (
     <View style={styles.container}>
@@ -15,7 +69,13 @@ export default function MapScreen() {
       </View>
 
       <View style={styles.mapFrame}>
-        <MapComponent transactions={transactions} />
+        {loading ? (
+          <View style={[styles.mapFrame, { justifyContent: 'center', alignItems: 'center' }]}>
+            <ActivityIndicator size="large" color="#e8a44a" />
+          </View>
+        ) : (
+          <MapComponent transactions={transactions} />
+        )}
       </View>
     </View>
   );
