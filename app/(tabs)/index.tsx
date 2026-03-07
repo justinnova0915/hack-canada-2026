@@ -454,6 +454,13 @@ export default function HomeScreen(): React.ReactElement {
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
 
           <View style={styles.resultsCard}>
+            {aiResult.imageUrl && (
+              <Image 
+                source={{ uri: aiResult.imageUrl }} 
+                style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 16 }} 
+                resizeMode="cover" 
+              />
+            )}
             <View style={styles.merchantRow}>
               <Text style={styles.merchantName}>{aiResult.merchant?.name || 'Unknown'}</Text>
               <View style={styles.tagPill}>
