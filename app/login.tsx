@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { auth } from '@/firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { Link, useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -11,6 +16,39 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
+    redirectUri: AuthSession.makeRedirectUri({
+      scheme: 'hackcanada2026',
+    }),
+  });
+
+  React.useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      
+      if (authentication?.idToken || authentication?.accessToken) {
+        const credential = GoogleAuthProvider.credential(
+          authentication.idToken ?? null,
+          authentication.accessToken ?? null
+        );
+        
+        signInWithCredential(auth, credential)
+          .then(() => {
+            router.replace('/(tabs)');
+          })
+          .catch((err) => {
+            console.error(err);
+            setError(err.message || 'Failed to sign in with Google.');
+          });
+      } else {
+        setError('Failed to retrieve authentication tokens from Google.');
+      }
+    } else if (response?.type === 'error') {
+      setError(response.error?.message || 'Google authentication failed.');
+    }
+  }, [response]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -78,6 +116,14 @@ export default function LoginScreen() {
           )}
         </TouchableOpacity>
 
+        <TouchableOpacity 
+          style={[styles.button, styles.googleButton, (!request || loading) && styles.buttonDisabled]} 
+          onPress={() => promptAsync()}
+          disabled={!request || loading}
+        >
+          <Text style={styles.googleButtonText}>Sign In with Google</Text>
+        </TouchableOpacity>
+
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>Don't have an account? </Text>
           <Link href={"/signup" as any} asChild>
@@ -143,6 +189,17 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginTop: 12,
+  },
+  googleButtonText: {
+    color: '#333',
     fontSize: 16,
     fontWeight: 'bold',
   },
