@@ -31,10 +31,11 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 function LiquidLoading() {
   const fillAnim = useRef(new Animated.Value(0)).current;
   const timeRef = useRef(0);
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null);
   const [wavePath, setWavePath] = useState('');
   const [highlightPath, setHighlightPath] = useState('');
   const fillRef = useRef(0);
+  const reachedTarget = useRef(false);
 
   useEffect(() => {
     Animated.timing(fillAnim, {
@@ -42,32 +43,41 @@ function LiquidLoading() {
       duration: 9000,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-    }).start(() => {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(fillAnim, {
-            toValue: 0.68,
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: false,
-          }),
-          Animated.timing(fillAnim, {
-            toValue: 0.62,
-            duration: 2500,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: false,
-          }),
-        ])
-      ).start();
+    }).start(({ finished }) => {
+      if (finished) {
+        reachedTarget.current = true;
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(fillAnim, {
+              toValue: 0.68,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+            Animated.timing(fillAnim, {
+              toValue: 0.62,
+              duration: 2500,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: false,
+            }),
+          ])
+        ).start();
+      }
     });
 
     const listener = fillAnim.addListener(({ value }) => {
-      fillRef.current = value;
+      // Once we've reached the target, never allow fill to drop below 0.62
+      if (reachedTarget.current) {
+        fillRef.current = Math.max(value, 0.62);
+      } else {
+        fillRef.current = value;
+      }
     });
 
     return () => {
       fillAnim.removeListener(listener);
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      fillAnim.stopAnimation();
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
   }, [fillAnim]);
 
@@ -124,7 +134,7 @@ function LiquidLoading() {
 
     frameRef.current = requestAnimationFrame(tick);
     return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
   }, [buildPaths]);
 
@@ -143,7 +153,6 @@ function LiquidLoading() {
     </View>
   );
 }
-
 const liquidStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0d1117' },
   content: { flex: 1, justifyContent: 'center', alignItems: 'center', zIndex: 10 },
