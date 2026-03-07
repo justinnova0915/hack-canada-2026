@@ -1,3 +1,4 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
@@ -271,7 +272,7 @@ export default function HomeScreen(): React.ReactElement {
           <Text style={styles.heroTitle}>{"Track an\nexpense"}</Text>
         </View>
         <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={pickImage}>
-          <Text style={{ fontSize: 18 }}>🖼️</Text>
+          <FontAwesome name="upload" size={24} color="black" />
         </TouchableOpacity>
       </Animated.View>
       <Text style={styles.hintText}>
