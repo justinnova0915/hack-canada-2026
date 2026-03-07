@@ -1,17 +1,31 @@
-import * as cors from "cors";
-import * as express from "express";
-import { onRequest } from "firebase-functions/v2/https";
+const { onRequest } = require("firebase-functions/v2/https");
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const multer = require("multer");
+const pipelineController = require("./src/controllers/pipelineController");
 
-// 1. Create your Express app instance
 const app = express();
 
-// 2. Enable CORS so your Pixel app can talk to it
 app.use(cors({ origin: true }));
+// Increase JSON payload size to allow huge base64 strings from Web
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// 3. Add a test route to make sure it's working
-app.get("/hello", (req, res) => {
-    res.send("Hello from Hack Canada Backend!");
+// Set up multer for temporary in-memory storage of uploaded images
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", message: "Fridge App AI Pipeline running on Firebase Functions" });
 });
 
-// 4. Export the 'api' function to Firebase
-export const api = onRequest(app);
+// Main AI Pipeline Endpoint (Native Form Data)
+app.post("/api/upload-receipt", upload.single("image"), pipelineController.processReceiptImage);
+
+// New AI Pipeline Endpoint (Web Base64 JSON)
+app.post("/api/upload-receipt-base64", pipelineController.processReceiptImageBase64);
+
+// Export the Express app as a Firebase Function
+// Configuring timeout to 5 minutes and memory to 1GB for AI operations
+exports.api = onRequest({ timeoutSeconds: 300, memory: "1GiB" }, app);

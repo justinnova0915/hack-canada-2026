@@ -1,59 +1,29 @@
 import { Platform } from 'react-native';
 
 const getApiBaseUrl = () => {
-    if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:3000';
-    } 
-    return 'http://localhost:3000';
+    // Both platforms will use the production Firebase Cloud Function URL
+    return 'https://us-central1-hack-canada-2026-b2c76.cloudfunctions.net/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
 
 export const uploadReceiptImage = async (imageUri, base64) => {
-    if (Platform.OS === 'web' && base64) {
-        console.log(`Sending base64 JSON payload to ${API_BASE_URL}/api/upload-receipt-base64`);
-        
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/upload-receipt-base64`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    image: base64
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server Error ${response.status}: ${errorText}`);
-            }
-
-            return await response.json();
-
-        } catch (error) {
-            console.error("API Base64 Upload Error:", error);
-            throw error;
-        }
+    if (!base64) {
+        throw new Error("Base64 image data is required for Firebase Functions upload.");
     }
-
-    const formData = new FormData();
-    const filename = imageUri.split('/').pop() || 'fridge.jpg';
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : `image`;
-
-    formData.append('image', { uri: imageUri, name: filename, type });
-
-    console.log(`Sending FormData to ${API_BASE_URL}/api/upload-receipt`);
-
+    
+    console.log(`Sending base64 JSON payload to ${API_BASE_URL}/api/upload-receipt-base64`);
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/api/upload-receipt`, {
+        const response = await fetch(`${API_BASE_URL}/api/upload-receipt-base64`, {
             method: 'POST',
-            body: formData,
             headers: {
+                'Content-Type': 'application/json',
                 'Accept': 'application/json'
             },
+            body: JSON.stringify({
+                image: base64
+            }),
         });
 
         if (!response.ok) {
@@ -64,7 +34,7 @@ export const uploadReceiptImage = async (imageUri, base64) => {
         return await response.json();
 
     } catch (error) {
-        console.error("API Form Upload Error:", error);
+        console.error("API Base64 Upload Error:", error);
         throw error;
     }
 }
