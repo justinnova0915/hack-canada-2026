@@ -27,21 +27,21 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="history"
+        name="History"
         options={{
           title: 'History',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="stats"
+        name="Stats"
         options={{
           title: 'Stats',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.bar.fill" color={color} />,
         }}
       />
       <Tabs.Screen
-        name="map"
+        name="Map"
         options={{
           title: 'Map',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="map.fill" color={color} />,
