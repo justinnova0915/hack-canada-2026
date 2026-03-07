@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { auth } from '@/firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { Link, useRouter } from 'expo-router';
 import { Colors } from '@/constants/theme';
+import { auth } from '@/firebaseConfig';
+import { Link, useRouter } from 'expo-router';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import React, { useState } from 'react';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -17,10 +17,10 @@ export default function LoginScreen() {
       setError('Please fill in all fields.');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/(tabs)' as any);
@@ -66,8 +66,8 @@ export default function LoginScreen() {
           />
         </View>
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
           disabled={loading}
         >
@@ -94,7 +94,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0d1117',
   },
   formContainer: {
     flex: 1,
@@ -104,12 +104,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#ccc',
     marginBottom: 32,
   },
   inputContainer: {
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#fff',
     marginBottom: 8,
   },
   input: {
