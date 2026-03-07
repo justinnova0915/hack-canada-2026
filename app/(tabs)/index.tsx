@@ -1,8 +1,11 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
+import { Audio } from 'expo-av';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Image,
   ScrollView,
@@ -10,10 +13,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { Audio } from 'expo-av';
 import { uploadFridgeImage } from '../api';
 
 export default function HomeScreen(): React.ReactElement {
@@ -51,8 +51,8 @@ export default function HomeScreen(): React.ReactElement {
   useEffect(() => {
     return sound
       ? () => {
-          sound.unloadAsync();
-        }
+        sound.unloadAsync();
+      }
       : undefined;
   }, [sound]);
 
@@ -89,32 +89,32 @@ export default function HomeScreen(): React.ReactElement {
     setLoading(true);
     setErrorMsg('');
     try {
-        const response: any = await uploadFridgeImage(uri, base64);
-        if (response.success && response.data) {
-           setAiResult(response.data);
-           if (response.data.voiceAudioUrl) {
-               playVoiceAudio(response.data.voiceAudioUrl.audioUrl || response.data.voiceAudioUrl);
-           }
-        } else {
-           setErrorMsg('Failed to process image: ' + JSON.stringify(response));
+      const response: any = await uploadFridgeImage(uri, base64);
+      if (response.success && response.data) {
+        setAiResult(response.data);
+        if (response.data.voiceAudioUrl) {
+          playVoiceAudio(response.data.voiceAudioUrl.audioUrl || response.data.voiceAudioUrl);
         }
+      } else {
+        setErrorMsg('Failed to process image: ' + JSON.stringify(response));
+      }
     } catch (e: any) {
-        setErrorMsg('Error connecting to backend: ' + e.message);
+      setErrorMsg('Error connecting to backend: ' + e.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const playVoiceAudio = async (base64AudioUrl: string) => {
     try {
-        console.log('Playing voice script...');
-        const { sound } = await Audio.Sound.createAsync(
-            { uri: base64AudioUrl }
-        );
-        setSound(sound);
-        await sound.playAsync();
+      console.log('Playing voice script...');
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: base64AudioUrl }
+      );
+      setSound(sound);
+      await sound.playAsync();
     } catch (e) {
-        console.error("Audio playback error", e);
+      console.error("Audio playback error", e);
     }
   };
 
@@ -138,8 +138,8 @@ export default function HomeScreen(): React.ReactElement {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-         <ActivityIndicator size="large" color="#e8a44a" />
-         <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is analyzing your ingredients...</Text>
+        <ActivityIndicator size="large" color="#e8a44a" />
+        <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is analyzing your ingredients...</Text>
       </View>
     );
   }
@@ -163,40 +163,40 @@ export default function HomeScreen(): React.ReactElement {
           ) : null}
 
           <View style={styles.resultsCard}>
-             <Text style={styles.resultsSubtitle}>Detected Ingredients</Text>
-             <View style={styles.tagContainer}>
-                 {aiResult.detectedIngredients?.map((ing: string, i: number) => (
-                    <Text key={i} style={styles.tag}>{ing}</Text>
-                 ))}
-             </View>
-             
-             {aiResult.topRecipe && (
-                 <View style={styles.recipeCard}>
-                    <Text style={styles.resultsSubtitleDark}>Top Recommended Recipe</Text>
-                    <Text style={styles.recipeTitle}>{aiResult.topRecipe.title}</Text>
-                    <Text style={styles.recipeDetail}>Cost: ${aiResult.topRecipe.cost}</Text>
-                    <Text style={styles.recipeDetail}>Calories: {aiResult.topRecipe.adjustedCalories} kcal</Text>
-                    
-                    <View style={styles.recipeGoalBox}>
-                        <Text style={styles.goalText}>{aiResult.topRecipe.message}</Text>
-                    </View>
-                 </View>
-             )}
+            <Text style={styles.resultsSubtitle}>Detected Ingredients</Text>
+            <View style={styles.tagContainer}>
+              {aiResult.detectedIngredients?.map((ing: string, i: number) => (
+                <Text key={i} style={styles.tag}>{ing}</Text>
+              ))}
+            </View>
 
-             {aiResult.voiceAudioUrl && (
-               <>
-                 <Text style={[styles.resultsSubtitle, { marginTop: 24 }]}>Voice Assistant Script</Text>
-                 <Text style={styles.voiceScript}>{aiResult.voiceAudioUrl.text_used || aiResult.voiceAudioUrl}</Text>
-                 
-                 <TouchableOpacity style={styles.playAudioBtn} activeOpacity={0.8} onPress={() => playVoiceAudio(aiResult.voiceAudioUrl.audioUrl || aiResult.voiceAudioUrl)}>
-                   <Text style={styles.playAudioBtnText}>🔊 Replay Audio</Text>
-                 </TouchableOpacity>
-               </>
-             )}
+            {aiResult.topRecipe && (
+              <View style={styles.recipeCard}>
+                <Text style={styles.resultsSubtitleDark}>Top Recommended Recipe</Text>
+                <Text style={styles.recipeTitle}>{aiResult.topRecipe.title}</Text>
+                <Text style={styles.recipeDetail}>Cost: ${aiResult.topRecipe.cost}</Text>
+                <Text style={styles.recipeDetail}>Calories: {aiResult.topRecipe.adjustedCalories} kcal</Text>
 
-             <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleRetake}>
-                <Text style={styles.proceedBtnText}>Scan Another</Text>
-             </TouchableOpacity>
+                <View style={styles.recipeGoalBox}>
+                  <Text style={styles.goalText}>{aiResult.topRecipe.message}</Text>
+                </View>
+              </View>
+            )}
+
+            {aiResult.voiceAudioUrl && (
+              <>
+                <Text style={[styles.resultsSubtitle, { marginTop: 24 }]}>Voice Assistant Script</Text>
+                <Text style={styles.voiceScript}>{aiResult.voiceAudioUrl.text_used || aiResult.voiceAudioUrl}</Text>
+
+                <TouchableOpacity style={styles.playAudioBtn} activeOpacity={0.8} onPress={() => playVoiceAudio(aiResult.voiceAudioUrl.audioUrl || aiResult.voiceAudioUrl)}>
+                  <Text style={styles.playAudioBtnText}>🔊 Replay Audio</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleRetake}>
+              <Text style={styles.proceedBtnText}>Scan Another</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -222,7 +222,7 @@ export default function HomeScreen(): React.ReactElement {
           </View>
 
           {errorMsg ? (
-              <Text style={{ color: '#ff4444', marginTop: 16, textAlign: 'center' }}>{errorMsg}</Text>
+            <Text style={{ color: '#ff4444', marginTop: 16, textAlign: 'center' }}>{errorMsg}</Text>
           ) : null}
 
           <View style={styles.previewActions}>
@@ -259,6 +259,7 @@ export default function HomeScreen(): React.ReactElement {
       </Text>
       {/* Camera Viewfinder */}
       <Animated.View style={[styles.section, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        {/* Camera Viewfinder */}
         <View style={styles.cameraCard}>
           {cameraReady ? (
             <CameraView
@@ -279,27 +280,6 @@ export default function HomeScreen(): React.ReactElement {
               </Text>
             </TouchableOpacity>
           )}
-          {cameraReady && (
-            <View style={styles.controlsRow}>
-              <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
-                <Octicons size={28} name="arrow-switch" color="#e8a44a" />
-              </TouchableOpacity>
-
-              <View style={styles.captureWrapper}>
-                <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
-                <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
-                  <View style={styles.captureInner}>
-                    <FontAwesome6 size={28} name="camera" color="#e8a44a" />
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.controlBtn}>
-                <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
-                <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
-              </View>
-            </View>
-          )}
 
           {/* Viewfinder corner brackets */}
           {cameraReady && (
@@ -311,6 +291,29 @@ export default function HomeScreen(): React.ReactElement {
             </>
           )}
         </View>
+
+        {/* Controls Row — OUTSIDE cameraCard so pulse isn't clipped */}
+        {cameraReady && (
+          <View style={styles.controlsRow}>
+            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
+              <Octicons size={28} name="arrow-switch" color="#e8a44a" />
+            </TouchableOpacity>
+
+            <View style={styles.captureWrapper}>
+              <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
+              <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
+                <View style={styles.captureInner}>
+                  <FontAwesome6 size={28} name="camera" color="#e8a44a" />
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.controlBtn}>
+              <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
+              <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
+            </View>
+          </View>
+        )}
       </Animated.View>
     </ScrollView>
   );
@@ -538,7 +541,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  
+
   // Results view styles
   resultsCard: {
     backgroundColor: 'rgba(255,255,255,0.03)',
