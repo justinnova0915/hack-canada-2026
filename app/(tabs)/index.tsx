@@ -458,9 +458,13 @@ export default function HomeScreen(): React.ReactElement {
                 </View>
               ))}
               {aiResult.items?.length > 5 && (
-                <Text style={styles.moreText}>+{aiResult.items.length - 5} more</Text>
+                <View style={styles.itemRow}>
+                  <Text style={styles.moreText}>+{aiResult.items.length - 5} more</Text>
+                  <Text style={styles.moreText}>Show all</Text>
+                </View>
               )}
             </View>
+
 
             <View style={styles.divider} />
 
