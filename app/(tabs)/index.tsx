@@ -443,7 +443,7 @@ export default function HomeScreen(): React.ReactElement {
         <View style={[styles.resultsTop, { paddingTop: insets.top + 16 }]}>
           <View>
             <Text style={styles.labelAccent}>RESULTS</Text>
-            <Text style={styles.headingLg}>Expense{'\n'}breakdown</Text>
+            <Text style={styles.headingLg}>Expense{'\n'}Breakdown</Text>
           </View>
           <TouchableOpacity style={styles.circleBtn} onPress={handleRetake}>
             <FontAwesome6 size={16} name="camera" color="#0d1117" />
@@ -465,6 +465,7 @@ export default function HomeScreen(): React.ReactElement {
               <Text style={styles.merchantName}>{aiResult.merchant?.name || 'Unknown'}</Text>
               <View style={styles.tagPill}>
                 <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
+                <Text style={[styles.tagText, { marginTop: 4 }]}>{'Edit'}</Text>
               </View>
             </View>
             <Text style={styles.dateMuted}>{aiResult.date}</Text>
@@ -906,6 +907,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.5,
+  },
+  editTagText: {
+    marginTop: 4,
   },
   dateMuted: {
     color: 'rgba(240,236,227,0.4)',
