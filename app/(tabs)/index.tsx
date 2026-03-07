@@ -119,6 +119,27 @@ export default function HomeScreen(): React.ReactElement {
                 Tap to grant camera access
               </Text>
             </TouchableOpacity>
+
+          )}
+          {cameraReady && (
+            <View style={styles.controlsRow}>
+              <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
+                <Text style={{ fontSize: 22 }}>🔄</Text>
+                <Text style={styles.controlLabel}>Flip</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
+                <View style={styles.captureInner}>
+                  <Text style={{ fontSize: 28 }}>📷</Text>
+                </View>
+              </TouchableOpacity>
+
+              <View style={styles.controlBtn}>
+                { }
+                <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
+                <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
+              </View>
+            </View>
           )}
 
           {/* Viewfinder corner brackets */}
@@ -130,29 +151,11 @@ export default function HomeScreen(): React.ReactElement {
               <View style={[styles.bracket, styles.bracketBR]} />
             </>
           )}
+
         </View>
 
         {/* Controls Row */}
-        {cameraReady && (
-          <View style={styles.controlsRow}>
-            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
-              <Text style={{ fontSize: 22 }}>🔄</Text>
-              <Text style={styles.controlLabel}>Flip</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
-              <View style={styles.captureInner}>
-                <Text style={{ fontSize: 28 }}>📷</Text>
-              </View>
-            </TouchableOpacity>
-
-            <View style={styles.controlBtn}>
-              { }
-              <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
-              <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
-            </View>
-          </View>
-        )}
 
         {/* Hint text */}
 
@@ -176,7 +179,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 64,
-    // paddingBottom: 24,
+    paddingBottom: 10,
   },
   sectionLabel: {
     fontSize: 11,
@@ -272,6 +275,11 @@ const styles = StyleSheet.create({
   },
 
   controlsRow: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 20,
+    zIndex: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
