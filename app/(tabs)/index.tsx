@@ -316,7 +316,12 @@ export default function HomeScreen(): React.ReactElement {
 
         {/* Controls Row — OUTSIDE cameraCard so pulse isn't clipped */}
         {cameraReady && (
-          <View style={styles.controlsRow}>
+          <View
+            style={[
+              styles.controlsRow,
+              { justifyContent: 'space-evenly', paddingHorizontal: 40 },
+            ]}
+          >
             <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
               <Octicons size={28} name="arrow-switch" color="#e8a44a" />
             </TouchableOpacity>
@@ -330,10 +335,7 @@ export default function HomeScreen(): React.ReactElement {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.controlBtn}>
-              <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
-              <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
-            </View>
+            <View style={styles.controlBtnSpacer} />
           </View>
         )}
       </Animated.View>
@@ -478,6 +480,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(240,236,227,0.5)',
     letterSpacing: 0.5,
+  },
+  controlBtnSpacer: {
+    width: 56,
+    height: 56,
   },
   captureWrapper: {
     width: 100,
