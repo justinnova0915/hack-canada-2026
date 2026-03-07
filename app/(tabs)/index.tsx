@@ -1,8 +1,11 @@
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Image,
   ScrollView,
@@ -10,13 +13,10 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { uploadReceiptImage } from '../api';
 import { useAuth } from '../../context/AuthContext';
 import { logReceipt } from '../../services/receiptService';
+import { uploadReceiptImage } from '../api';
 
 export default function HomeScreen(): React.ReactElement {
   const { user } = useAuth();
@@ -83,16 +83,16 @@ export default function HomeScreen(): React.ReactElement {
     setLoading(true);
     setErrorMsg('');
     try {
-        const response: any = await uploadReceiptImage(uri, base64);
-        if (response.success && response.data) {
-           setAiResult(response.data);
-        } else {
-           setErrorMsg('Failed to process image: ' + JSON.stringify(response));
-        }
+      const response: any = await uploadReceiptImage(uri, base64);
+      if (response.success && response.data) {
+        setAiResult(response.data);
+      } else {
+        setErrorMsg('Failed to process image: ' + JSON.stringify(response));
+      }
     } catch (e: any) {
-        setErrorMsg('Error connecting to backend: ' + e.message);
+      setErrorMsg('Error connecting to backend: ' + e.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -119,9 +119,9 @@ export default function HomeScreen(): React.ReactElement {
       return;
     }
     if (!aiResult) {
-       return;
+      return;
     }
-    
+
     try {
       setLoading(true);
       await logReceipt(user.uid, aiResult);
@@ -137,8 +137,8 @@ export default function HomeScreen(): React.ReactElement {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-         <ActivityIndicator size="large" color="#e8a44a" />
-         <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is extracting your expenses...</Text>
+        <ActivityIndicator size="large" color="#e8a44a" />
+        <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is extracting your expenses...</Text>
       </View>
     );
   }
@@ -162,63 +162,63 @@ export default function HomeScreen(): React.ReactElement {
           ) : null}
 
           <View style={styles.resultsCard}>
-             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <Text style={styles.resultsSubtitle}>{aiResult.merchant?.name || "Unknown Merchant"}</Text>
-                <Text style={styles.tag}>{aiResult.merchant?.category || "Misc"}</Text>
-             </View>
-             <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 14, marginBottom: 16 }}>{aiResult.date}</Text>
-             
-             {aiResult.location?.address && (
-                <View style={{ marginBottom: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
-                   <Text style={{ color: '#f0ece3', fontSize: 13 }}>📍 {aiResult.location.address}</Text>
-                </View>
-             )}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={styles.resultsSubtitle}>{aiResult.merchant?.name || "Unknown Merchant"}</Text>
+              <Text style={styles.tag}>{aiResult.merchant?.category || "Misc"}</Text>
+            </View>
+            <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 14, marginBottom: 16 }}>{aiResult.date}</Text>
 
-             <View style={{ marginBottom: 24 }}>
-                 {aiResult.items?.slice(0, 5).map((item: any, i: number) => (
-                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                       <View style={{ flex: 1, paddingRight: 10 }}>
-                           <Text style={{ color: '#f0ece3', fontSize: 15, fontWeight: '500' }}>{item.name}</Text>
-                       </View>
-                       <Text style={{ color: '#f0ece3', fontSize: 16, fontWeight: '700' }}>${item.amount?.toFixed(2)}</Text>
-                    </View>
-                 ))}
-                 {aiResult.items?.length > 5 && (
-                     <Text style={{ color: 'rgba(240,236,227,0.5)', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>+ {aiResult.items.length - 5} more items...</Text>
-                 )}
-             </View>
+            {aiResult.location?.address && (
+              <View style={{ marginBottom: 16, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 8 }}>
+                <Text style={{ color: '#f0ece3', fontSize: 13 }}>📍 {aiResult.location.address}</Text>
+              </View>
+            )}
 
-             <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingTop: 16, marginBottom: 16 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Subtotal</Text>
-                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.subtotal?.toFixed(2)}</Text>
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tax & Fees</Text>
-                   <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tax?.toFixed(2)}</Text>
-                </View>
-                {aiResult.totals?.tip > 0 && (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                     <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tip</Text>
-                     <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tip?.toFixed(2)}</Text>
+            <View style={{ marginBottom: 24 }}>
+              {aiResult.items?.slice(0, 5).map((item: any, i: number) => (
+                <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={{ color: '#f0ece3', fontSize: 15, fontWeight: '500' }}>{item.name}</Text>
                   </View>
-                )}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                   <Text style={{ color: '#e8a44a', fontSize: 18, fontWeight: '800' }}>Gross Total</Text>
-                   <Text style={{ color: '#e8a44a', fontSize: 20, fontWeight: '900' }}>${aiResult.totals?.gross?.toFixed(2)}</Text>
+                  <Text style={{ color: '#f0ece3', fontSize: 16, fontWeight: '700' }}>${item.amount?.toFixed(2)}</Text>
                 </View>
-             </View>
+              ))}
+              {aiResult.items?.length > 5 && (
+                <Text style={{ color: 'rgba(240,236,227,0.5)', fontSize: 12, fontStyle: 'italic', marginTop: 4 }}>+ {aiResult.items.length - 5} more items...</Text>
+              )}
+            </View>
 
-             <View style={{ backgroundColor: 'rgba(232,164,74,0.1)', padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: '#e8a44a', fontSize: 14 }}>Payment Source</Text>
-                <Text style={{ color: '#e8a44a', fontSize: 14, fontWeight: '600' }}>
-                   {aiResult.source?.paymentMethod} {aiResult.source?.cardIdentifier}
-                </Text>
-             </View>
+            <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingTop: 16, marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Subtotal</Text>
+                <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.subtotal?.toFixed(2)}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tax & Fees</Text>
+                <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tax?.toFixed(2)}</Text>
+              </View>
+              {aiResult.totals?.tip > 0 && (
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>Tip</Text>
+                  <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 15 }}>${aiResult.totals?.tip?.toFixed(2)}</Text>
+                </View>
+              )}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
+                <Text style={{ color: '#e8a44a', fontSize: 18, fontWeight: '800' }}>Gross Total</Text>
+                <Text style={{ color: '#e8a44a', fontSize: 20, fontWeight: '900' }}>${aiResult.totals?.gross?.toFixed(2)}</Text>
+              </View>
+            </View>
 
-             <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleLogReceipt}>
-                <Text style={styles.proceedBtnText}>Verify & Log</Text>
-             </TouchableOpacity>
+            <View style={{ backgroundColor: 'rgba(232,164,74,0.1)', padding: 12, borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: '#e8a44a', fontSize: 14 }}>Payment Source</Text>
+              <Text style={{ color: '#e8a44a', fontSize: 14, fontWeight: '600' }}>
+                {aiResult.source?.paymentMethod} {aiResult.source?.cardIdentifier}
+              </Text>
+            </View>
+
+            <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleLogReceipt}>
+              <Text style={styles.proceedBtnText}>Verify & Log</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -244,7 +244,7 @@ export default function HomeScreen(): React.ReactElement {
           </View>
 
           {errorMsg ? (
-              <Text style={{ color: '#ff4444', marginTop: 16, textAlign: 'center' }}>{errorMsg}</Text>
+            <Text style={{ color: '#ff4444', marginTop: 16, textAlign: 'center' }}>{errorMsg}</Text>
           ) : null}
 
           <View style={styles.previewActions}>
@@ -281,6 +281,7 @@ export default function HomeScreen(): React.ReactElement {
       </Text>
       {/* Camera Viewfinder */}
       <Animated.View style={[styles.section, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+        {/* Camera Viewfinder */}
         <View style={styles.cameraCard}>
           {cameraReady ? (
             <CameraView
@@ -301,27 +302,6 @@ export default function HomeScreen(): React.ReactElement {
               </Text>
             </TouchableOpacity>
           )}
-          {cameraReady && (
-            <View style={styles.controlsRow}>
-              <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
-                <Octicons size={28} name="arrow-switch" color="#e8a44a" />
-              </TouchableOpacity>
-
-              <View style={styles.captureWrapper}>
-                <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
-                <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
-                  <View style={styles.captureInner}>
-                    <FontAwesome6 size={28} name="camera" color="#e8a44a" />
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.controlBtn}>
-                <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
-                <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
-              </View>
-            </View>
-          )}
 
           {/* Viewfinder corner brackets */}
           {cameraReady && (
@@ -333,6 +313,29 @@ export default function HomeScreen(): React.ReactElement {
             </>
           )}
         </View>
+
+        {/* Controls Row — OUTSIDE cameraCard so pulse isn't clipped */}
+        {cameraReady && (
+          <View style={styles.controlsRow}>
+            <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
+              <Octicons size={28} name="arrow-switch" color="#e8a44a" />
+            </TouchableOpacity>
+
+            <View style={styles.captureWrapper}>
+              <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
+              <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
+                <View style={styles.captureInner}>
+                  <FontAwesome6 size={28} name="camera" color="#e8a44a" />
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.controlBtn}>
+              <Text style={{ fontSize: 22, opacity: 0 }}>🔄</Text>
+              <Text style={[styles.controlLabel, { opacity: 0 }]}>Flip</Text>
+            </View>
+          </View>
+        )}
       </Animated.View>
     </ScrollView>
   );
@@ -560,8 +563,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  
-  // Results view styles
+
   resultsCard: {
     backgroundColor: 'rgba(255,255,255,0.03)',
     borderRadius: BORDER_RADIUS,
@@ -575,18 +577,6 @@ const styles = StyleSheet.create({
     color: '#f0ece3',
     marginBottom: 16,
   },
-  resultsSubtitleDark: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 8,
-  },
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 24,
-  },
   tag: {
     backgroundColor: 'rgba(232,164,74,0.15)',
     color: '#e8a44a',
@@ -595,59 +585,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     fontSize: 14,
     overflow: 'hidden',
-  },
-  recipeCard: {
-    backgroundColor: '#f0ece3',
-    padding: 18,
-    borderRadius: 16,
-    marginTop: 8,
-  },
-  recipeTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#e8a44a',
-    marginBottom: 6,
-  },
-  recipeDetail: {
-    fontSize: 14,
-    color: '#444',
-    marginBottom: 4,
-  },
-  recipeGoalBox: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: 'rgba(232,164,74,0.1)',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#e8a44a',
-  },
-  goalText: {
-    color: '#333',
-    fontSize: 13,
-    fontWeight: '500',
-    fontStyle: 'italic',
-  },
-  voiceScript: {
-    fontSize: 14,
-    color: 'rgba(240,236,227,0.7)',
-    fontStyle: 'italic',
-    lineHeight: 22,
-    marginBottom: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    padding: 16,
-    borderRadius: 12,
-  },
-  playAudioBtn: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  playAudioBtnText: {
-    color: '#f0ece3',
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
