@@ -9,25 +9,19 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
-export const uploadFridgeImage = async (imageUri, base64) => {
+export const uploadReceiptImage = async (imageUri, base64) => {
     if (Platform.OS === 'web' && base64) {
-        console.log(`Sending base64 JSON payload to ${API_BASE_URL}/api/upload-fridge-base64`);
+        console.log(`Sending base64 JSON payload to ${API_BASE_URL}/api/upload-receipt-base64`);
         
         try {
-            const response = await fetch(`${API_BASE_URL}/api/upload-fridge-base64`, {
+            const response = await fetch(`${API_BASE_URL}/api/upload-receipt-base64`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify({
-                    image: base64,
-                    age: '22',
-                    weight: '75',
-                    height: '180',
-                    activityLevel: '1.5',
-                    goal: 'weight loss',
-                    budget: '8.0'
+                    image: base64
                 }),
             });
 
@@ -50,17 +44,11 @@ export const uploadFridgeImage = async (imageUri, base64) => {
     const type = match ? `image/${match[1]}` : `image`;
 
     formData.append('image', { uri: imageUri, name: filename, type });
-    formData.append('age', '22');
-    formData.append('weight', '75');
-    formData.append('height', '180');
-    formData.append('activityLevel', '1.5');
-    formData.append('goal', 'weight loss');
-    formData.append('budget', '8.0');
 
-    console.log(`Sending FormData to ${API_BASE_URL}/api/upload-fridge`);
+    console.log(`Sending FormData to ${API_BASE_URL}/api/upload-receipt`);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/upload-fridge`, {
+        const response = await fetch(`${API_BASE_URL}/api/upload-receipt`, {
             method: 'POST',
             body: formData,
             headers: {

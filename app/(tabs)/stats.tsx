@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-type MacroData = {
+type ExpenseData = {
   value: number;
   color: string;
   name: string;
@@ -9,27 +9,28 @@ type MacroData = {
 };
 
 export default function StatsScreen() {
-  const macros = {
-    protein: { current: 80, goal: 150, color: '#e8a44a' },
-    carbs: { current: 210, goal: 300, color: '#c9663c' },
-    fat: { current: 65, goal: 80, color: '#7a4e2d' },
+  const expenses = {
+    necessary: { current: 650, goal: 1000, color: '#e8a44a' },
+    food: { current: 420, goal: 500, color: '#c9663c' },
+    misc: { current: 150, goal: 200, color: '#7a4e2d' },
+    recurring: { current: 300, goal: 350, color: '#9c8166' }
   };
 
-  const totalCurrent = macros.protein.current + macros.carbs.current + macros.fat.current;
+  const totalCurrent = Object.values(expenses).reduce((acc, curr) => acc + curr.current, 0);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>TODAY&apos;S MACROS</Text>
+      <Text style={styles.sectionLabel}>THIS MONTH&apos;S EXPENSES</Text>
 
       {/* Hero Summary Card */}
       <View style={styles.summaryCard}>
-        <Text style={styles.totalValue}>{totalCurrent}g</Text>
-        <Text style={styles.totalSub}>Total Consumed</Text>
+        <Text style={styles.totalValue}>${totalCurrent}</Text>
+        <Text style={styles.totalSub}>Total Spent</Text>
       </View>
 
-      {/* Macro Progress Bars */}
+      {/* Expense Progress Bars */}
       <View style={styles.statsContainer}>
-        {Object.entries(macros).map(([key, data]) => {
+        {Object.entries(expenses).map(([key, data]) => {
           const percentage = Math.min((data.current / data.goal) * 100, 100);
 
           return (
@@ -37,8 +38,8 @@ export default function StatsScreen() {
               <View style={styles.macroHeader}>
                 <Text style={styles.macroName}>{key.toUpperCase()}</Text>
                 <Text style={styles.macroDetail}>
-                  <Text style={styles.currentWeight}>{data.current}g</Text>
-                  <Text style={styles.goalWeight}> / {data.goal}g</Text>
+                  <Text style={styles.currentWeight}>${data.current}</Text>
+                  <Text style={styles.goalWeight}> / ${data.goal}</Text>
                 </Text>
               </View>
 
@@ -57,9 +58,9 @@ export default function StatsScreen() {
 
       {/* Composition Breakdown */}
       <View style={styles.breakdownBox}>
-        <Text style={styles.breakdownTitle}>Composition</Text>
+        <Text style={styles.breakdownTitle}>Spending Breakdown</Text>
         <View style={styles.compositionBar}>
-          {Object.entries(macros).map(([key, data]) => (
+          {Object.entries(expenses).map(([key, data]) => (
             <View
               key={key}
               style={{

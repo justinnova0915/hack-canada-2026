@@ -22,10 +22,10 @@ app.get('/api/health', (req, res) => {
 });
 
 // Main AI Pipeline Endpoint (Native Form Data)
-app.post('/api/upload-fridge', upload.single('image'), pipelineController.processFridgeImage);
+app.post('/api/upload-receipt', upload.single('image'), pipelineController.processReceiptImage);
 
 // New AI Pipeline Endpoint (Web Base64 JSON)
-app.post('/api/upload-fridge-base64', pipelineController.processFridgeImageBase64);
+app.post('/api/upload-receipt-base64', pipelineController.processReceiptImageBase64);
 
 
 app.listen(port, () => {

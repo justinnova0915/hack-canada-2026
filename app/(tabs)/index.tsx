@@ -13,8 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { Audio } from 'expo-av';
-import { uploadFridgeImage } from '../api';
+import { uploadReceiptImage } from '../api';
 
 export default function HomeScreen(): React.ReactElement {
   const [permission, requestPermission] = useCameraPermissions();
@@ -26,7 +25,6 @@ export default function HomeScreen(): React.ReactElement {
   const [aiResult, setAiResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -47,14 +45,6 @@ export default function HomeScreen(): React.ReactElement {
       ])
     ).start();
   }, [fadeAnim, slideAnim, pulseAnim]);
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
 
   const handleCapture = async () => {
     if (cameraRef.current) {
@@ -89,12 +79,9 @@ export default function HomeScreen(): React.ReactElement {
     setLoading(true);
     setErrorMsg('');
     try {
-        const response: any = await uploadFridgeImage(uri, base64);
+        const response: any = await uploadReceiptImage(uri, base64);
         if (response.success && response.data) {
            setAiResult(response.data);
-           if (response.data.voiceAudioUrl) {
-               playVoiceAudio(response.data.voiceAudioUrl.audioUrl || response.data.voiceAudioUrl);
-           }
         } else {
            setErrorMsg('Failed to process image: ' + JSON.stringify(response));
         }
@@ -102,19 +89,6 @@ export default function HomeScreen(): React.ReactElement {
         setErrorMsg('Error connecting to backend: ' + e.message);
     } finally {
         setLoading(false);
-    }
-  };
-
-  const playVoiceAudio = async (base64AudioUrl: string) => {
-    try {
-        console.log('Playing voice script...');
-        const { sound } = await Audio.Sound.createAsync(
-            { uri: base64AudioUrl }
-        );
-        setSound(sound);
-        await sound.playAsync();
-    } catch (e) {
-        console.error("Audio playback error", e);
     }
   };
 
@@ -139,7 +113,7 @@ export default function HomeScreen(): React.ReactElement {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
          <ActivityIndicator size="large" color="#e8a44a" />
-         <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is analyzing your ingredients...</Text>
+         <Text style={{ color: '#e8a44a', marginTop: 16, fontSize: 16 }}>AI is extracting your expenses...</Text>
       </View>
     );
   }
@@ -163,36 +137,25 @@ export default function HomeScreen(): React.ReactElement {
           ) : null}
 
           <View style={styles.resultsCard}>
-             <Text style={styles.resultsSubtitle}>Detected Ingredients</Text>
-             <View style={styles.tagContainer}>
-                 {aiResult.detectedIngredients?.map((ing: string, i: number) => (
-                    <Text key={i} style={styles.tag}>{ing}</Text>
+             <Text style={styles.resultsSubtitle}>{aiResult.merchant || "Unknown Merchant"}</Text>
+             <Text style={{ color: 'rgba(240,236,227,0.7)', fontSize: 14, marginBottom: 16 }}>{aiResult.date}</Text>
+             
+             <View style={{ marginBottom: 24 }}>
+                 {aiResult.expenses?.map((exp: any, i: number) => (
+                    <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                       <View style={{ flex: 1, paddingRight: 10 }}>
+                           <Text style={{ color: '#f0ece3', fontSize: 15, fontWeight: '500' }}>{exp.name}</Text>
+                           <Text style={{ color: 'rgba(232,164,74,0.8)', fontSize: 12, marginTop: 4 }}>{exp.category}</Text>
+                       </View>
+                       <Text style={{ color: '#f0ece3', fontSize: 16, fontWeight: '700' }}>${exp.amount?.toFixed(2)}</Text>
+                    </View>
                  ))}
              </View>
-             
-             {aiResult.topRecipe && (
-                 <View style={styles.recipeCard}>
-                    <Text style={styles.resultsSubtitleDark}>Top Recommended Recipe</Text>
-                    <Text style={styles.recipeTitle}>{aiResult.topRecipe.title}</Text>
-                    <Text style={styles.recipeDetail}>Cost: ${aiResult.topRecipe.cost}</Text>
-                    <Text style={styles.recipeDetail}>Calories: {aiResult.topRecipe.adjustedCalories} kcal</Text>
-                    
-                    <View style={styles.recipeGoalBox}>
-                        <Text style={styles.goalText}>{aiResult.topRecipe.message}</Text>
-                    </View>
-                 </View>
-             )}
 
-             {aiResult.voiceAudioUrl && (
-               <>
-                 <Text style={[styles.resultsSubtitle, { marginTop: 24 }]}>Voice Assistant Script</Text>
-                 <Text style={styles.voiceScript}>{aiResult.voiceAudioUrl.text_used || aiResult.voiceAudioUrl}</Text>
-                 
-                 <TouchableOpacity style={styles.playAudioBtn} activeOpacity={0.8} onPress={() => playVoiceAudio(aiResult.voiceAudioUrl.audioUrl || aiResult.voiceAudioUrl)}>
-                   <Text style={styles.playAudioBtnText}>🔊 Replay Audio</Text>
-                 </TouchableOpacity>
-               </>
-             )}
+             <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.1)', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ color: '#e8a44a', fontSize: 18, fontWeight: '800' }}>Total</Text>
+                <Text style={{ color: '#e8a44a', fontSize: 20, fontWeight: '900' }}>${aiResult.total?.toFixed(2)}</Text>
+             </View>
 
              <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleRetake}>
                 <Text style={styles.proceedBtnText}>Scan Another</Text>
@@ -245,8 +208,8 @@ export default function HomeScreen(): React.ReactElement {
       {/* Header */}
       <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
         <View>
-          <Text style={styles.sectionLabel}>GOOD EVENING</Text>
-          <Text style={styles.heroTitle}>{"What's in\nyour fridge?"}</Text>
+          <Text style={styles.sectionLabel}>FINANCES</Text>
+          <Text style={styles.heroTitle}>{"Track an\nexpense"}</Text>
         </View>
         <TouchableOpacity style={styles.avatar} activeOpacity={0.8} onPress={pickImage}>
           <Text style={{ fontSize: 18 }}>🖼️</Text>
@@ -254,8 +217,8 @@ export default function HomeScreen(): React.ReactElement {
       </Animated.View>
       <Text style={styles.hintText}>
         {cameraReady
-          ? 'Point at your fridge, snap a photo, or upload from gallery 🖼️'
-          : 'Camera permission is needed to scan ingredients'}
+          ? 'Snap a receipt or screenshot to track expenses 🧾'
+          : 'Camera permission is needed to scan receipts'}
       </Text>
       {/* Camera Viewfinder */}
       <Animated.View style={[styles.section, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
