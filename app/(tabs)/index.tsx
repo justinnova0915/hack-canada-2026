@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8a44a',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 30,
   },
   section: {
     paddingHorizontal: 24,
