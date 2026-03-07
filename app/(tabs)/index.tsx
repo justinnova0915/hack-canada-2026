@@ -294,12 +294,16 @@ export default function HomeScreen(): React.ReactElement {
 
         {/* Controls Row — OUTSIDE cameraCard so pulse isn't clipped */}
         {cameraReady && (
-
-          <View style={styles.controlsRow}>
-            <View style={{ width: 5 }} />
+          <View
+            style={[
+              styles.controlsRow,
+              { justifyContent: 'space-evenly', paddingHorizontal: 40 },
+            ]}
+          >
             <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
               <Octicons size={28} name="arrow-switch" color="#e8a44a" />
             </TouchableOpacity>
+
             <View style={styles.captureWrapper}>
               <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
               <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
@@ -308,7 +312,6 @@ export default function HomeScreen(): React.ReactElement {
                 </View>
               </TouchableOpacity>
             </View>
-            <View style={{ width: 30 }} />
 
             <View style={styles.controlBtnSpacer} />
           </View>
