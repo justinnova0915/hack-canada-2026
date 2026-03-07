@@ -421,7 +421,11 @@ export default function HomeScreen(): React.ReactElement {
           text: 'OK',
           onPress: () => {
             handleRetake();
-            router.push('/(tabs)/history');
+            router.push({
+              pathname: '/(tabs)/history', params: {
+                items: JSON.stringify(aiResult.items),
+              },
+            });
           },
         },
       ]);
@@ -462,7 +466,14 @@ export default function HomeScreen(): React.ReactElement {
                   <Text style={styles.tagText}>{aiResult.merchant?.category || 'Misc'}</Text>
                 </View>
                 <TouchableOpacity style={{}} activeOpacity={0} onPress={() => {
-                  // Handle edit action here
+                  router.push({
+                    pathname: '/(tabs)/edit',
+                    params: {
+                      items: JSON.stringify(aiResult.items),
+                      merchant: JSON.stringify(aiResult.merchant),
+                      totals: JSON.stringify(aiResult.totals),
+                    },
+                  });
                 }}>
                   <Feather name="edit" size={24} color="white" />
                 </TouchableOpacity>
