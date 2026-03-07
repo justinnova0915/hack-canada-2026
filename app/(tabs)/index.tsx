@@ -349,8 +349,7 @@ export default function HomeScreen(): React.ReactElement {
     setAiResult(null);
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
+      allowsEditing: false,
       quality: 0.5,
       base64: true,
     });
@@ -455,10 +454,10 @@ export default function HomeScreen(): React.ReactElement {
 
           <View style={styles.resultsCard}>
             {aiResult.imageUrl && (
-              <Image 
-                source={{ uri: aiResult.imageUrl }} 
-                style={{ width: '100%', height: 180, borderRadius: 12, marginBottom: 16 }} 
-                resizeMode="cover" 
+              <Image
+                source={{ uri: aiResult.imageUrl }}
+                style={{ width: '100%', height: 180, borderRadius: 15, marginBottom: 16 }}
+                resizeMode="cover"
               />
             )}
             <View style={styles.merchantRow}>
@@ -510,7 +509,7 @@ export default function HomeScreen(): React.ReactElement {
                 <Text style={styles.totalVal}>${aiResult.totals?.tip?.toFixed(2)}</Text>
               </View>
             )}
-            <View style={[styles.totalRow, { marginTop: 12 }]}>
+            <View style={[styles.totalRow, { marginTop: 15 }]}>
               <Text style={styles.grossLabel}>Total</Text>
               <Text style={styles.grossVal}>${aiResult.totals?.gross?.toFixed(2)}</Text>
             </View>
@@ -527,7 +526,7 @@ export default function HomeScreen(): React.ReactElement {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={{ height: 120 }} />
+        <View style={{ height: 150 }} />
       </ScrollView>
     );
   }
@@ -536,12 +535,12 @@ export default function HomeScreen(): React.ReactElement {
     return (
       <View style={styles.fullScreen}>
         <StatusBar barStyle="light-content" />
-        <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+        <Image source={{ uri: photoUri }} style={StyleSheet.absoluteFillObject} resizeMode="contain" />
 
-        <View style={[styles.bracket, { top: insets.top + 12, left: 12 }, styles.bTL]} />
-        <View style={[styles.bracket, { top: insets.top + 12, right: 12 }, styles.bTR]} />
-        <View style={[styles.bracket, { bottom: 120, left: 12 }, styles.bBL]} />
-        <View style={[styles.bracket, { bottom: 120, right: 12 }, styles.bBR]} />
+        <View style={[styles.bracket, { top: insets.top + 15, left: 15 }, styles.bTL]} />
+        <View style={[styles.bracket, { top: insets.top + 15, right: 15 }, styles.bTR]} />
+        <View style={[styles.bracket, { bottom: 150, left: 15 }, styles.bBL]} />
+        <View style={[styles.bracket, { bottom: 150, right: 15 }, styles.bBR]} />
 
         {errorMsg ? <Text style={styles.errorFloat}>{errorMsg}</Text> : null}
 
@@ -582,15 +581,15 @@ export default function HomeScreen(): React.ReactElement {
 
       {cameraReady && (
         <>
-          <View style={[styles.bracket, { top: insets.top + 12, left: 12 }, styles.bTL]} />
-          <View style={[styles.bracket, { top: insets.top + 12, right: 12 }, styles.bTR]} />
-          <View style={[styles.bracket, { bottom: 12, left: 12 }, styles.bBL]} />
-          <View style={[styles.bracket, { bottom: 12, right: 12 }, styles.bBR]} />
+          <View style={[styles.bracket, { top: insets.top + 15, left: 15 }, styles.bTL]} />
+          <View style={[styles.bracket, { top: insets.top + 15, right: 15 }, styles.bTR]} />
+          <View style={[styles.bracket, { bottom: 200, left: 15 }, styles.bBL]} />
+          <View style={[styles.bracket, { bottom: 200, right: 15 }, styles.bBR]} />
         </>
       )}
 
       {cameraReady && (
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 15 }]}>
           <View style={[styles.topBar, { top: insets.top - 30, right: insets.right + 0 }]} pointerEvents="box-none">
             <TouchableOpacity style={styles.topPill} activeOpacity={0.8} onPress={pickImage}>
               <Feather name="image" size={16} color="#e8a44a" />
@@ -678,7 +677,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 15,
     backgroundColor: 'rgba(13,17,23,0.85)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -743,7 +742,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#0d1117',
-    gap: 12,
+    gap: 15,
   },
   permissionCircle: {
     width: 80,
@@ -754,7 +753,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(232,164,74,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 15,
   },
   permissionTitle: {
     fontSize: 22,
@@ -772,7 +771,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    gap: 12,
+    gap: 15,
     paddingHorizontal: 20,
     paddingTop: 20,
     backgroundColor: 'rgba(13,17,23,0.85)',
@@ -894,12 +893,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#f0ece3',
     flex: 1,
-    marginRight: 12,
+    marginRight: 15,
   },
   tagPill: {
     backgroundColor: 'rgba(232,164,74,0.1)',
     borderRadius: 20,
-    paddingHorizontal: 12,
+    paddingHorizontal: 15,
     paddingVertical: 4,
   },
   tagText: {
@@ -923,11 +922,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     padding: 10,
     backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 12,
+    borderRadius: 15,
   },
   locationText: {
     color: 'rgba(240,236,227,0.6)',
-    fontSize: 12,
+    fontSize: 15,
     flex: 1,
   },
   itemRow: {
@@ -943,7 +942,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     flex: 1,
-    marginRight: 12,
+    marginRight: 15,
   },
   itemPrice: {
     color: '#f0ece3',
@@ -952,12 +951,12 @@ const styles = StyleSheet.create({
   },
   moreText: {
     color: 'rgba(240,236,227,0.3)',
-    fontSize: 12,
+    fontSize: 15,
     marginTop: 8,
   },
   showAllBtnText: {
     color: '#e8a44a',
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: '700',
     marginTop: 8,
   },
