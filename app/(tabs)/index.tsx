@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 64,
-    paddingBottom: 24,
+    // paddingBottom: 24,
   },
   sectionLabel: {
     fontSize: 11,
