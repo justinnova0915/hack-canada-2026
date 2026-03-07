@@ -3,20 +3,28 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Animated,
-  Image,
+  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Audio } from 'expo-av';
+import { uploadFridgeImage } from '../api';
 
 export default function HomeScreen(): React.ReactElement {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoData, setPhotoData] = useState<{uri: string, base64?: string} | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(24)).current;
@@ -38,35 +46,76 @@ export default function HomeScreen(): React.ReactElement {
     ).start();
   }, [fadeAnim, slideAnim, pulseAnim]);
 
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
   const handleCapture = async () => {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
+      const photo = await cameraRef.current.takePictureAsync({ base64: true });
       if (photo) {
-        setPhotoUri(photo.uri);
+        setPhotoData({ uri: photo.uri, base64: photo.base64 });
+        setAiResult(null);
+        setErrorMsg('');
       }
     }
   };
 
   const handleRetake = () => {
-    setPhotoUri(null);
+    setPhotoData(null);
+    setAiResult(null);
+    setErrorMsg('');
   };
 
   const handleFlip = () => {
     setFacing(toggleFacing);
   };
 
-  const handleProceed = () => {
-    // TODO: navigate to next screen or process the image
-    console.log('Proceeding with photo:', photoUri);
+  const handleProceed = async () => {
+    if (!photoData || !photoData.base64) return;
+    
+    setLoading(true);
+    try {
+        const response = await uploadFridgeImage(photoData.uri, photoData.base64);
+        if (response.success && response.data) {
+           setAiResult(response.data);
+           if (response.data.voiceAudioUrl) {
+               playVoiceAudio(response.data.voiceAudioUrl);
+           }
+        } else {
+           setErrorMsg('Failed to process image: ' + JSON.stringify(response));
+        }
+    } catch (e: any) {
+        setErrorMsg('Error connecting to backend: ' + e.message);
+    } finally {
+        setLoading(false);
+    }
   };
 
-  if (photoUri) {
+  const playVoiceAudio = async (base64AudioUrl: string) => {
+    try {
+        console.log('Playing voice script...');
+        const { sound: newSound } = await Audio.Sound.createAsync(
+            { uri: base64AudioUrl }
+        );
+        setSound(newSound);
+        await newSound.playAsync();
+    } catch (e) {
+        console.error("Audio playback error", e);
+    }
+  }
+
+  if (photoData) {
     return (
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View>
-            <Text style={styles.sectionLabel}>PREVIEW</Text>
-            <Text style={styles.heroTitle}>{'Looking\ngood?'}</Text>
+            <Text style={styles.sectionLabel}>{aiResult ? 'RESULTS' : 'PREVIEW'}</Text>
+            <Text style={styles.heroTitle}>{aiResult ? 'Here is your\nrecipe!' : 'Looking\ngood?'}</Text>
           </View>
           <View style={styles.avatar}>
             <Text style={{ fontSize: 18 }}>👤</Text>
@@ -74,22 +123,76 @@ export default function HomeScreen(): React.ReactElement {
         </Animated.View>
 
         <View style={styles.section}>
-          <View style={styles.previewCard}>
-            <Image source={{ uri: photoUri }} style={styles.previewImage} resizeMode="cover" />
-          </View>
+          {!aiResult && (
+            <View style={styles.previewCard}>
+              <RNImage source={{ uri: photoData.uri }} style={styles.previewImage} resizeMode="cover" />
+            </View>
+          )}
 
-          <View style={styles.previewActions}>
-            <TouchableOpacity style={styles.retakeBtn} activeOpacity={0.8} onPress={handleRetake}>
-              <Text style={styles.retakeBtnText}>🔄  Retake</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.proceedBtn} activeOpacity={0.85} onPress={handleProceed}>
-              <Text style={styles.proceedBtnText}>Proceed  →</Text>
-            </TouchableOpacity>
-          </View>
+          {loading && (
+             <View style={styles.loadingContainer}>
+                 <ActivityIndicator size="large" color="#e8a44a" />
+                 <Text style={styles.loadingText}>AI is analyzing your ingredients...</Text>
+             </View>
+          )}
+
+          {errorMsg ? (
+             <Text style={styles.errorText}>{errorMsg}</Text>
+          ) : null}
+
+          {aiResult && !loading && (
+             <View style={styles.resultsContainer}>
+                <Text style={styles.subtitleText}>Detected Ingredients</Text>
+                <View style={styles.tagContainer}>
+                    {aiResult.detectedIngredients?.map((ing: string, i: number) => (
+                       <Text key={i} style={styles.tag}>{ing}</Text>
+                    ))}
+                </View>
+                
+                {aiResult.topRecipe && (
+                    <View style={styles.recipeCard}>
+                       <Text style={styles.subtitleText}>Top Recommended Recipe</Text>
+                       <Text style={styles.recipeTitle}>{aiResult.topRecipe.title}</Text>
+                       <Text style={styles.recipeDetails}>Budget Cost: ${aiResult.topRecipe.cost}</Text>
+                       <Text style={styles.recipeDetails}>Adjusted Calories: {aiResult.topRecipe.adjustedCalories} kcal</Text>
+                       
+                       <View style={styles.recipeGoalBox}>
+                           <Text style={styles.goalText}>{aiResult.topRecipe.message}</Text>
+                       </View>
+                    </View>
+                )}
+
+                <Text style={[styles.subtitleText, {marginTop: 20}]}>Voice Assistant Script</Text>
+                <Text style={styles.voiceScript}>{aiResult.voiceAudioUrl?.text_used || 'Script available'}</Text>
+                <TouchableOpacity style={styles.playAudioBtn} onPress={() => playVoiceAudio(aiResult.voiceAudioUrl?.audioUrl || aiResult.voiceAudioUrl)}>
+                    <Text style={styles.playAudioBtnText}>🔊 Replay Audio</Text>
+                </TouchableOpacity>
+             </View>
+          )}
+
+          {!aiResult && !loading && (
+            <View style={styles.previewActions}>
+              <TouchableOpacity style={styles.retakeBtn} activeOpacity={0.8} onPress={handleRetake}>
+                <Text style={styles.retakeBtnText}>🔄  Retake</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.proceedBtn} activeOpacity={0.85} onPress={handleProceed}>
+                <Text style={styles.proceedBtnText}>Proceed  →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {(aiResult || loading) && (
+            <View style={styles.previewActions}>
+              <TouchableOpacity style={styles.retakeBtn} activeOpacity={0.8} onPress={handleRetake}>
+                <Text style={styles.retakeBtnText}>🔄  Scan Again</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </ScrollView>
     );
   }
+
   const cameraReady = permission?.granted;
 
   return (
@@ -167,11 +270,6 @@ export default function HomeScreen(): React.ReactElement {
           )}
 
         </View>
-
-        {/* Controls Row */}
-
-
-        {/* Hint text */}
 
       </Animated.View>
     </ScrollView>
@@ -400,5 +498,104 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '700',
+  },
+  loadingContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    color: '#e8a44a',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  errorText: {
+    color: '#ff4d4f',
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  resultsContainer: {
+    marginTop: 20,
+    padding: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  subtitleText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#e8a44a',
+    marginBottom: 12,
+  },
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 24,
+  },
+  tag: {
+    backgroundColor: 'rgba(232,164,74,0.15)',
+    color: '#f0ece3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    fontSize: 13,
+    fontWeight: '500',
+    borderWidth: 1,
+    borderColor: 'rgba(232,164,74,0.3)',
+  },
+  recipeCard: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  recipeTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#f0ece3',
+    marginVertical: 4,
+  },
+  recipeDetails: {
+    color: 'rgba(240,236,227,0.7)',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  recipeGoalBox: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: 'rgba(232,164,74,0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(232,164,74,0.2)',
+  },
+  goalText: {
+    color: '#e8a44a',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  voiceScript: {
+    color: 'rgba(240,236,227,0.8)',
+    fontSize: 14,
+    fontStyle: 'italic',
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+  playAudioBtn: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  playAudioBtnText: {
+    color: '#f0ece3',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

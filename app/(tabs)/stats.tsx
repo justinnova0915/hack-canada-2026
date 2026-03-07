@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { VictoryPie } from 'victory-native';
+import { PolarChart, Pie } from 'victory-native';
 
 export default function StatsScreen() {
   const { width: screenWidth } = useWindowDimensions();
@@ -27,17 +27,16 @@ export default function StatsScreen() {
 
       <View style={styles.chartBox}>
         {/* Donut Chart */}
-        <VictoryPie
-          data={data}
-          width={chartSize}
-          height={chartSize}
-          innerRadius={chartSize * 0.35}
-          colorScale={data.map(d => d.color)}
-          labels={() => null}
-          style={{
-            data: { stroke: 'transparent' }
-          }}
-        />
+        <View style={{ width: chartSize, height: chartSize }}>
+          <PolarChart
+            data={data}
+            colorKey="color"
+            valueKey="y"
+            labelKey="x"
+          >
+            <Pie.Chart innerRadius={chartSize * 0.35} />
+          </PolarChart>
+        </View>
 
         {/* Center label */}
         <View style={styles.centerLabel}>
