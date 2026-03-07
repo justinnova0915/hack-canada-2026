@@ -20,6 +20,7 @@ export interface ReceiptData {
   location?: {
     address?: string;
   };
+  imageUrl?: string;
   date?: string;
 }
 
