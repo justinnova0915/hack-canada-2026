@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from 'firebase/app';
 // 1. Remove getReactNativePersistence from the main import to stop the error
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Auth, getAuth, initializeAuth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
@@ -28,4 +29,6 @@ if (Platform.OS === 'web') {
   });
 }
 
-export { app, auth };
+const db: Firestore = getFirestore(app);
+
+export { app, auth, db };

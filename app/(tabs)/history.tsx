@@ -1,8 +1,57 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
+import { getUserReceipts } from '../../services/receiptService';
+import { useFocusEffect } from 'expo-router';
 
 export default function HistoryScreen() {
-  const transactions: any[] = [];
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const fetchReceipts = async () => {
+        if (!user) {
+          if (isActive) {
+            setTransactions([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        try {
+          setLoading(true);
+          const receipts = await getUserReceipts(user.uid);
+          if (isActive) {
+            const formattedTransactions = receipts.map(r => {
+              const data = r.receiptData || {};
+              return {
+                id: r.id,
+                merchant: data.merchant?.name || 'Unknown',
+                date: data.date || 'Unknown Date',
+                amount: data.totals?.gross || 0,
+                category: data.merchant?.category || 'Misc'
+              };
+            });
+            setTransactions(formattedTransactions);
+          }
+        } catch (error) {
+          console.error('Failed to fetch receipts', error);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+
+      fetchReceipts();
+
+      return () => {
+        isActive = false;
+      };
+    }, [user])
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -15,7 +64,9 @@ export default function HistoryScreen() {
       </View>
 
       <View style={styles.listContainer}>
-        {transactions.length > 0 ? (
+        {loading ? (
+          <ActivityIndicator size="large" color="#e8a44a" style={{ marginTop: 40 }} />
+        ) : transactions.length > 0 ? (
           transactions.map((tx) => (
             <View key={tx.id} style={styles.transactionCard}>
               <View style={styles.leftCol}>

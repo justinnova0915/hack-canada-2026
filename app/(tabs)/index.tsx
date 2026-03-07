@@ -11,11 +11,15 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadReceiptImage } from '../api';
+import { useAuth } from '../../context/AuthContext';
+import { logReceipt } from '../../services/receiptService';
 
 export default function HomeScreen(): React.ReactElement {
+  const { user } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -109,6 +113,27 @@ export default function HomeScreen(): React.ReactElement {
     }
   };
 
+  const handleLogReceipt = async () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to save receipts.');
+      return;
+    }
+    if (!aiResult) {
+       return;
+    }
+    
+    try {
+      setLoading(true);
+      await logReceipt(user.uid, aiResult);
+      Alert.alert('Success', 'Receipt logged successfully!');
+      handleRetake();
+    } catch (e: any) {
+      Alert.alert('Error', 'Failed to log receipt: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -191,7 +216,7 @@ export default function HomeScreen(): React.ReactElement {
                 </Text>
              </View>
 
-             <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleRetake}>
+             <TouchableOpacity style={[styles.proceedBtn, { marginTop: 32 }]} activeOpacity={0.85} onPress={handleLogReceipt}>
                 <Text style={styles.proceedBtnText}>Verify & Log</Text>
              </TouchableOpacity>
           </View>
