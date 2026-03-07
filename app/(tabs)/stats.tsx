@@ -16,7 +16,9 @@ const createExpenseBuckets = () => ({
 
 export default function StatsScreen() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [periodMode, setPeriodMode] = useState<PeriodMode>('monthly');
   const [monthlyExpenses, setMonthlyExpenses] = useState(createExpenseBuckets());
   const [allTimeExpenses, setAllTimeExpenses] = useState(createExpenseBuckets());
@@ -33,12 +35,21 @@ export default function StatsScreen() {
 
       const fetchStats = async () => {
         if (!user) {
-          if (isActive) setLoading(false);
+          if (isActive) {
+            setInitialLoading(false);
+            setRefreshing(false);
+          }
           return;
         }
 
         try {
-          if (isActive) setLoading(true);
+          if (isActive) {
+            if (!hasLoadedOnce) {
+              setInitialLoading(true);
+            } else {
+              setRefreshing(true);
+            }
+          }
           const receipts = await getUserReceipts(user.uid);
 
           if (!isActive) return;
@@ -63,11 +74,15 @@ export default function StatsScreen() {
           setAvgDaily(computedStats.velocity.avg30Days);
           setAllTimeCards(computedStats.cards.allTime);
           setMonthlyCards(computedStats.cards.monthly);
+          setHasLoadedOnce(true);
 
         } catch (error) {
           console.error('Failed to fetch stats', error);
         } finally {
-          if (isActive) setLoading(false);
+          if (isActive) {
+            setInitialLoading(false);
+            setRefreshing(false);
+          }
         }
       };
 
@@ -76,7 +91,7 @@ export default function StatsScreen() {
       return () => {
         isActive = false;
       };
-    }, [user])
+    }, [user, hasLoadedOnce])
   );
 
   const velocityIncrease = avgDaily > 0 ? ((currentDaily - avgDaily) / avgDaily * 100).toFixed(1) : '0.0';
@@ -91,11 +106,19 @@ export default function StatsScreen() {
   year: 'numeric',
 });
 
-  if (loading) {
+  if (initialLoading || refreshing) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#e8a44a" />
-      </View>
+      <>
+        <View style={styles.container}>
+          <View style={styles.content}>
+            <Text style={styles.sectionLabel}>SPENDING PULSE</Text>
+          </View>
+          <View style={styles.centerLoading}>
+            <ActivityIndicator size="large" color="#e8a44a" />
+          </View>
+        </View>
+        <CustomNavBar />
+      </>
     );
   }
 
@@ -238,6 +261,12 @@ const styles = StyleSheet.create({
     color: '#e8a44a',
     opacity: 0.8,
     marginBottom: 24,
+  },
+  centerLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -80,
   },
   summaryCard: {
     backgroundColor: 'rgba(255,255,255,0.04)',
