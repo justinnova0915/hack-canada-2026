@@ -4,10 +4,11 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
+  Dimensions,
   Easing,
   Image,
   ScrollView,
@@ -18,9 +19,139 @@ import {
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../../context/AuthContext';
 import { uploadReceiptImage } from '../../services/api';
 import { logReceipt } from '../../services/receiptService';
+
+const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+
+/* ── Liquid Wave Loading ────────────────────────────────────────── */
+
+function LiquidLoading() {
+  const fillAnim = useRef(new Animated.Value(0)).current;
+  const timeRef = useRef(0);
+  const frameRef = useRef<number>();
+  const [wavePath, setWavePath] = useState('');
+  const [highlightPath, setHighlightPath] = useState('');
+  const fillRef = useRef(0);
+
+  useEffect(() => {
+    Animated.timing(fillAnim, {
+      toValue: 0.65,
+      duration: 9000,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(fillAnim, {
+            toValue: 0.68,
+            duration: 2500,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+          Animated.timing(fillAnim, {
+            toValue: 0.62,
+            duration: 2500,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: false,
+          }),
+        ])
+      ).start();
+    });
+
+    const listener = fillAnim.addListener(({ value }) => {
+      fillRef.current = value;
+    });
+
+    return () => {
+      fillAnim.removeListener(listener);
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [fillAnim]);
+
+  const buildPaths = useCallback(() => {
+    const t = timeRef.current;
+    const fill = fillRef.current;
+    const baseY = SCREEN_H * (1 - fill);
+    const step = 4;
+
+    let mainD = `M 0 ${SCREEN_H} `;
+    for (let x = 0; x <= SCREEN_W; x += step) {
+      const y =
+        baseY +
+        Math.sin(x * 0.008 + t * 1.8) * 14 +
+        Math.sin(x * 0.015 + t * 2.5) * 8 +
+        Math.sin(x * 0.003 + t * 1.2) * 18 +
+        Math.cos(x * 0.012 + t * 3.0) * 5;
+      if (x === 0) mainD += `L 0 ${y} `;
+      mainD += `L ${x} ${y} `;
+    }
+    mainD += `L ${SCREEN_W} ${SCREEN_H} Z`;
+
+    const hlAmp = 8;
+    const hlOffset = -10;
+    let highD = '';
+    for (let x = 0; x <= SCREEN_W; x += step) {
+      const y =
+        baseY +
+        hlOffset +
+        Math.sin(x * 0.006 + t * 1.6) * hlAmp +
+        Math.sin(x * 0.01 + t * 2.2) * (hlAmp * 0.5);
+      if (x === 0) {
+        highD = `M ${x} ${y}`;
+      } else {
+        highD += ` L ${x} ${y}`;
+      }
+    }
+
+    setWavePath(mainD);
+    setHighlightPath(highD);
+  }, []);
+
+  useEffect(() => {
+    let lastTime = Date.now();
+
+    const tick = () => {
+      const now = Date.now();
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      timeRef.current += dt;
+      buildPaths();
+      frameRef.current = requestAnimationFrame(tick);
+    };
+
+    frameRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
+  }, [buildPaths]);
+
+  return (
+    <View style={liquidStyles.container}>
+      <StatusBar barStyle="light-content" />
+      <Svg width={SCREEN_W} height={SCREEN_H} style={StyleSheet.absoluteFill}>
+        <Path d={wavePath} fill="rgba(180,110,20,0.22)" />
+        <Path d={highlightPath} fill="none" stroke="rgba(180,110,20,0.4)" strokeWidth={3} />
+      </Svg>
+      <View style={liquidStyles.content}>
+        <FontAwesome6 size={32} name="receipt" color="#b46e14" style={{ marginBottom: 28 }} />
+        <Text style={liquidStyles.title}>Analyzing</Text>
+        <Text style={liquidStyles.subtitle}>Extracting expenses from your receipt...</Text>
+      </View>
+    </View>
+  );
+}
+
+const liquidStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0d1117' },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  title: { color: '#f0ece3', fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  subtitle: { color: 'rgba(240,236,227,0.4)', fontSize: 14, fontWeight: '500' },
+});
+
+/* ── Nav Bubble ─────────────────────────────────────────────────── */
 
 interface NavItem {
   route: string;
@@ -158,6 +289,8 @@ const navStyles = StyleSheet.create({
   },
 });
 
+/* ── Main Screen ────────────────────────────────────────────────── */
+
 export default function HomeScreen(): React.ReactElement {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -270,17 +403,9 @@ export default function HomeScreen(): React.ReactElement {
     }
   };
 
-  // ── Loading ────────────────────────────────────────────────────
+  // ── Loading — Liquid Wave ──────────────────────────────────────
   if (loading) {
-    return (
-      <View style={[styles.fullScreen, styles.centered]}>
-        <StatusBar barStyle="light-content" />
-        <Animated.View style={[styles.loaderPulse, { transform: [{ scale: pulseAnim }] }]} />
-        <FontAwesome6 size={28} name="receipt" color="#e8a44a" style={{ marginBottom: 24 }} />
-        <Text style={styles.loadingTitle}>Analyzing</Text>
-        <Text style={styles.loadingSub}>Extracting expenses from your receipt...</Text>
-      </View>
-    );
+    return <LiquidLoading />;
   }
 
   if (aiResult) {
@@ -508,7 +633,6 @@ const styles = StyleSheet.create({
   bBL: { borderBottomWidth: BW, borderLeftWidth: BW, borderBottomLeftRadius: 8 },
   bBR: { borderBottomWidth: BW, borderRightWidth: BW, borderBottomRightRadius: 8 },
 
-  /* ── Bottom Bar ─────────────────────────────────── */
   bottomBar: {
     position: 'absolute',
     bottom: 0,
