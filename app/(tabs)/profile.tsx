@@ -16,6 +16,8 @@ import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '@/context/AuthContext';
 import { getUserReceipts } from '../../services/receiptService';
 import { aggregateSpendStats } from '../../services/spendStats';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../../firebaseConfig';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -46,25 +48,34 @@ export default function ProfileScreen() {
     useCallback(() => {
       let isActive = true;
 
-      const fetchMonthlySpent = async () => {
+      const fetchData = async () => {
         if (!user) {
           if (isActive) setMonthlySpent(0);
           return;
         }
 
         try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (isActive && userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.budget !== undefined) {
+              setMonthlyIncome(data.budget.toString());
+            }
+          }
+
           const receipts = await getUserReceipts(user.uid);
           const stats = aggregateSpendStats(receipts);
           if (isActive) {
             setMonthlySpent(stats.totals.monthly);
           }
         } catch (error) {
-          console.error('Failed to fetch monthly spend', error);
+          console.error('Failed to fetch data', error);
           if (isActive) setMonthlySpent(0);
         }
       };
 
-      fetchMonthlySpent();
+      fetchData();
 
       return () => {
         isActive = false;
@@ -72,8 +83,16 @@ export default function ProfileScreen() {
     }, [user])
   );
 
-  const handleSaveIncome = () => {
-    Alert.alert('Saved', 'Monthly income updated!');
+  const handleSaveIncome = async () => {
+    if (!user) return;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, { budget: parseFloat(monthlyIncome) || 0 }, { merge: true });
+      Alert.alert('Saved', 'Monthly income updated!');
+    } catch (error) {
+      console.error('Failed to save income', error);
+      Alert.alert('Error', 'Failed to save monthly income.');
+    }
   };
 
   return (
