@@ -395,6 +395,17 @@ export default function HomeScreen(): React.ReactElement {
     }
   };
 
+  const handleShowAllItems = () => {
+    if (!aiResult?.items?.length) return;
+
+    router.push({
+      pathname: '/(tabs)/more',
+      params: {
+        items: JSON.stringify(aiResult.items),
+      },
+    });
+  };
+
   const handleLogReceipt = async () => {
     if (!user) {
       Alert.alert('Error', 'You must be logged in to save receipts.');
@@ -468,7 +479,9 @@ export default function HomeScreen(): React.ReactElement {
               {aiResult.items?.length > 5 && (
                 <View style={styles.itemRow}>
                   <Text style={styles.moreText}>+{aiResult.items.length - 5} more</Text>
-                  <Text style={styles.moreText}>Show all</Text>
+                  <TouchableOpacity onPress={handleShowAllItems} activeOpacity={0.8}>
+                    <Text style={styles.showAllBtnText}>Show all</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -929,6 +942,12 @@ const styles = StyleSheet.create({
   moreText: {
     color: 'rgba(240,236,227,0.3)',
     fontSize: 12,
+    marginTop: 8,
+  },
+  showAllBtnText: {
+    color: '#e8a44a',
+    fontSize: 12,
+    fontWeight: '700',
     marginTop: 8,
   },
   divider: {
