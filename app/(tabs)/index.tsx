@@ -942,20 +942,8 @@ const styles = StyleSheet.create({
   tagPill: {
     backgroundColor: 'rgba(232,164,74,0.1)',
     borderRadius: 20,
-<<<<<<< HEAD
     paddingHorizontal: 15,
     paddingVertical: 4,
-=======
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 5,
-  },
-  editPill: {
-    backgroundColor: 'rgba(232,164,74,0.1)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
->>>>>>> 7366621234716bb9620f1449eb563ba082d1a248
   },
   tagText: {
     color: '#e8a44a',
