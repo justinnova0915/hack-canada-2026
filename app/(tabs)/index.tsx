@@ -22,7 +22,6 @@ import { useAuth } from '../../context/AuthContext';
 import { uploadReceiptImage } from '../../services/api';
 import { logReceipt } from '../../services/receiptService';
 
-/* ── Inline Nav Bubble ──────────────────────────────────────────── */
 interface NavItem {
   route: string;
   icon: string;
@@ -87,10 +86,14 @@ function NavBubble() {
     outputRange: ['0deg', '180deg'],
   });
 
+  const borderWidth = expandAnim.interpolate({
+    inputRange: [0, 0.1, 1],
+    outputRange: [0, 1, 1],
+  });
+
   return (
     <View style={navStyles.wrapper}>
-      {/* Expanding column — grows upward */}
-      <Animated.View style={[navStyles.column, { height: columnHeight }]}>
+      <Animated.View style={[navStyles.column, { height: columnHeight, borderWidth }]}>
         <Animated.View style={[navStyles.columnInner, { opacity: itemsOpacity }]}>
           {NAV_ITEMS.map((item) => (
             <TouchableOpacity
@@ -105,7 +108,6 @@ function NavBubble() {
         </Animated.View>
       </Animated.View>
 
-      {/* Toggle button — same size as other controls */}
       <TouchableOpacity style={navStyles.toggleBtn} activeOpacity={0.8} onPress={toggle}>
         <Animated.View style={{ transform: [{ rotate: chevronRotate }] }}>
           <Feather name="chevron-up" size={20} color="#e8a44a" />
@@ -121,13 +123,13 @@ const navStyles = StyleSheet.create({
     width: BUBBLE_SIZE,
   },
   column: {
+    position: 'absolute',
+    bottom: BUBBLE_SIZE + 8,
     width: BUBBLE_SIZE,
     backgroundColor: 'rgba(13,17,23,0.92)',
     borderRadius: 26,
-    borderWidth: 1,
     borderColor: 'rgba(232,164,74,0.2)',
     overflow: 'hidden',
-    marginBottom: 8,
   },
   columnInner: {
     flex: 1,
@@ -155,8 +157,6 @@ const navStyles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
-/* ── Main Screen ────────────────────────────────────────────────── */
 
 export default function HomeScreen(): React.ReactElement {
   const { user } = useAuth();
@@ -283,7 +283,6 @@ export default function HomeScreen(): React.ReactElement {
     );
   }
 
-  // ── AI Results ─────────────────────────────────────────────────
   if (aiResult) {
     return (
       <ScrollView style={[styles.fullScreen, { backgroundColor: '#0d1117' }]} showsVerticalScrollIndicator={false}>
@@ -367,7 +366,6 @@ export default function HomeScreen(): React.ReactElement {
     );
   }
 
-  // ── Photo Preview ──────────────────────────────────────────────
   if (photoUri) {
     return (
       <View style={styles.fullScreen}>
@@ -394,7 +392,6 @@ export default function HomeScreen(): React.ReactElement {
     );
   }
 
-  // ── Full-Screen Camera ─────────────────────────────────────────
   const cameraReady = permission?.granted;
 
   return (
@@ -417,15 +414,13 @@ export default function HomeScreen(): React.ReactElement {
         </TouchableOpacity>
       )}
 
-      {/* Top bar */}
-      <View style={[styles.topBar, { top: insets.top + 8 }]} pointerEvents="box-none">
+      <View style={[styles.topBar, { top: insets.top + 19, right: insets.right + 5 }]} pointerEvents="box-none">
         <TouchableOpacity style={styles.topPill} activeOpacity={0.8} onPress={pickImage}>
           <Feather name="image" size={16} color="#e8a44a" />
           <Text style={styles.topPillText}>Gallery</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Corner brackets */}
       {cameraReady && (
         <>
           <View style={[styles.bracket, { top: insets.top + 12, left: 12 }, styles.bTL]} />
@@ -435,16 +430,13 @@ export default function HomeScreen(): React.ReactElement {
         </>
       )}
 
-      {/* Bottom controls — NavBubble | Capture | Flip */}
       {cameraReady && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
           <Text style={styles.hintText}>Point at a receipt</Text>
 
           <View style={styles.controlsRow}>
-            {/* Left — NavBubble (rolls up) */}
             <NavBubble />
 
-            {/* Center — Capture */}
             <View style={styles.captureWrapper}>
               <Animated.View style={[styles.pulseRing, { transform: [{ scale: pulseAnim }] }]} />
               <TouchableOpacity style={styles.captureOuter} activeOpacity={0.85} onPress={handleCapture}>
@@ -454,7 +446,6 @@ export default function HomeScreen(): React.ReactElement {
               </TouchableOpacity>
             </View>
 
-            {/* Right — Flip */}
             <TouchableOpacity style={styles.controlBtn} activeOpacity={0.8} onPress={handleFlip}>
               <Octicons size={20} name="arrow-switch" color="#e8a44a" />
             </TouchableOpacity>
