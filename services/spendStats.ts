@@ -5,7 +5,7 @@ export type ExpenseKey = 'necessary' | 'miscellaneous' | 'recurring';
 export interface CardStat {
   amount: number;
   name: string;
-  last4: string;
+  last4: string | null;
   color: string;
 }
 
@@ -89,7 +89,7 @@ function addToCardMap(
   cardKey: string,
   name: string,
   amount: number,
-  last4: string
+  last4: string | null
 ) {
   if (!map[cardKey]) {
     map[cardKey] = {
@@ -151,7 +151,7 @@ export function aggregateSpendStats(receipts: ReceiptDoc[]): SpendStats {
     }
 
     const cardIdentifier = data.source?.cardIdentifier;
-    const paymentMethod = data.source?.paymentMethod || 'Credit Card';
+    const paymentMethod = data.source?.paymentMethod || 'Other Payments';
 
     if (cardIdentifier) {
       addToCardMap(allTimeCardsMap, cardIdentifier, paymentMethod, amount, cardIdentifier.slice(-4));
@@ -162,9 +162,9 @@ export function aggregateSpendStats(receipts: ReceiptDoc[]): SpendStats {
     }
 
     if (paymentMethod) {
-      addToCardMap(allTimeCardsMap, paymentMethod, paymentMethod, amount, '0000');
+      addToCardMap(allTimeCardsMap, paymentMethod, paymentMethod, amount, null);
       if (isCurrentMonth) {
-        addToCardMap(monthlyCardsMap, paymentMethod, paymentMethod, amount, '0000');
+        addToCardMap(monthlyCardsMap, paymentMethod, paymentMethod, amount, null);
       }
     }
   });
