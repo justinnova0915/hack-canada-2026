@@ -1,10 +1,10 @@
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
+import { useIsFocused } from '@react-navigation/native';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -14,6 +14,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  PanResponder,
   Pressable,
   ScrollView,
   StatusBar,
@@ -376,20 +377,25 @@ export default function HomeScreen(): React.ReactElement {
         console.error('Failed to parse updatedAiResult', e);
       }
     }
-  }, [params.updatedAiResult]);
-
-  useEffect(() => {
-    if (aiResult?.imageUrl) {
-      resultImageLoadStartedAt.current = Date.now();
-      setResultImageLoading(true);
-      return;
-    }
-
-    setResultImageLoading(false);
-  }, [aiResult?.imageUrl]);
+  }, [params.updatedAiResult, router]);
   const [analyzingLoading, setAnalyzingLoading] = useState(false);
   const [loggingLoading, setLoggingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const swipeToHistory = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+        gestureState.dx > 10 &&
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2.5,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        gestureState.dx > 10 &&
+        Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2.5,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 55) {
+          router.push('/(tabs)/history');
+        }
+      },
+    })
+  ).current;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -568,17 +574,24 @@ export default function HomeScreen(): React.ReactElement {
 
   if (aiResult) {
     return (
-      <ScrollView style={[styles.fullScreen, { backgroundColor: '#0d1117' }]} showsVerticalScrollIndicator={false}>
-        <StatusBar barStyle="light-content" />
-        <View style={[styles.resultsTop, { paddingTop: insets.top + 16 }]}>
-          <View>
-            <Text style={styles.labelAccent}>RESULTS</Text>
-            <Text style={styles.headingLg}>Expense{'\n'}Breakdown</Text>
+      <View style={[styles.fullScreen, { backgroundColor: '#0d1117' }]} {...swipeToHistory.panHandlers}>
+        <ScrollView
+          style={[styles.fullScreen, { backgroundColor: '#0d1117' }]}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          directionalLockEnabled={true}
+          scrollEnabled={true}
+        >
+          <StatusBar barStyle="light-content" />
+          <View style={[styles.resultsTop, { paddingTop: insets.top + 16 }]}>
+            <View>
+              <Text style={styles.labelAccent}>RESULTS</Text>
+              <Text style={styles.headingLg}>Expense{'\n'}Breakdown</Text>
+            </View>
+            <TouchableOpacity style={styles.circleBtn} onPress={handleRetake}>
+              <FontAwesome6 size={16} name="camera" color="#0d1117" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.circleBtn} onPress={handleRetake}>
-            <FontAwesome6 size={16} name="camera" color="#0d1117" />
-          </TouchableOpacity>
-        </View>
 
         <View style={styles.section}>
           {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
@@ -682,8 +695,9 @@ export default function HomeScreen(): React.ReactElement {
             </TouchableOpacity>
           </View>
         </View>
-        <View style={{ height: 150 }} />
-      </ScrollView>
+          <View style={{ height: 150 }} />
+        </ScrollView>
+      </View>
     );
   }
 
