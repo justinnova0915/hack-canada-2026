@@ -4,6 +4,7 @@ import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -351,6 +352,7 @@ const navStyles = StyleSheet.create({
 
 export default function HomeScreen(): React.ReactElement {
   const router = useRouter();
+  const isFocused = useIsFocused();
   const params = useLocalSearchParams<{ updatedAiResult?: string }>();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -717,7 +719,7 @@ export default function HomeScreen(): React.ReactElement {
     <View style={styles.fullScreen}>
       <StatusBar barStyle="light-content" />
 
-      {cameraReady ? (
+      {cameraReady && isFocused ? (
         <Pressable
           style={StyleSheet.absoluteFillObject}
           onPress={handleTapToFocus}
