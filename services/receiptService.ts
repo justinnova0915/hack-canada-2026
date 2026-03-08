@@ -1,4 +1,4 @@
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 export interface ReceiptData {
@@ -54,6 +54,16 @@ export const getUserReceipts = async (userId: string) => {
     return receipts;
   } catch (e) {
     console.error('Error fetching receipts: ', e);
+    throw e;
+  }
+};
+
+export const deleteReceipt = async (userId: string, receiptId: string) => {
+  try {
+    const docRef = doc(db, 'users', userId, 'receipts', receiptId);
+    await deleteDoc(docRef);
+  } catch (e) {
+    console.error('Error deleting document: ', e);
     throw e;
   }
 };

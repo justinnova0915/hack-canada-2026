@@ -1,7 +1,6 @@
 
 const getApiBaseUrl = () => {
-    // TEMP: Local testing - switch back to Firebase Cloud Function URL before deploy
-    return 'http://172.20.10.5:3000';
+    return 'https://us-central1-hack-canada-2026-b2c76.cloudfunctions.net/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

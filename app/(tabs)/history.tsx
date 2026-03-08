@@ -1,9 +1,10 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity, Modal } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity, Modal, Animated } from 'react-native';
 import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
-import { getUserReceipts } from '../../services/receiptService';
+import { getUserReceipts, deleteReceipt } from '../../services/receiptService';
+import { Swipeable } from 'react-native-gesture-handler';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
@@ -14,6 +15,49 @@ export default function HistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
+
+  const handleDelete = async (receiptId: string) => {
+    if (!user) return;
+    try {
+      await deleteReceipt(user.uid, receiptId);
+      setTransactions((prev) => prev.filter((t) => t.id !== receiptId));
+    } catch (e) {
+      console.error('Failed to delete', e);
+    }
+  };
+
+  const handleEdit = (tx: any) => {
+    router.push({
+      pathname: '/(tabs)',
+      params: { updatedAiResult: JSON.stringify(tx.rawReceipt) }
+    });
+  };
+
+  const renderLeftActions = (progress: any, dragX: any, tx: any) => {
+    const scale = dragX.interpolate({
+      inputRange: [0, 80],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    });
+    return (
+      <TouchableOpacity style={styles.editAction} activeOpacity={0.8} onPress={() => handleEdit(tx)}>
+        <Animated.Text style={[styles.actionText, { transform: [{ scale }] }]}>Edit</Animated.Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderRightActions = (progress: any, dragX: any, receiptId: string) => {
+    const scale = dragX.interpolate({
+      inputRange: [-80, 0],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    });
+    return (
+      <TouchableOpacity style={styles.deleteAction} activeOpacity={0.8} onPress={() => handleDelete(receiptId)}>
+        <Animated.Text style={[styles.actionText, { transform: [{ scale }] }]}>Delete</Animated.Text>
+      </TouchableOpacity>
+    );
+  };
 
   const filteredTransactions = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -59,7 +103,8 @@ export default function HistoryScreen() {
                 date: data.date || 'Unknown Date',
                 amount: data.totals?.gross || 0,
                 category: data.merchant?.category || 'Misc',
-                imageUrl: data.imageUrl || null
+                imageUrl: data.imageUrl || null,
+                rawReceipt: data
               };
             });
             setTransactions(formattedTransactions);
@@ -118,27 +163,37 @@ export default function HistoryScreen() {
             <ActivityIndicator size="large" color="#e8a44a" style={{ marginTop: 40 }} />
           ) : filteredTransactions.length > 0 ? (
             filteredTransactions.map((tx) => (
-              <View key={tx.id} style={styles.transactionCard}>
-                <View style={styles.leftCol}>
-                  <TouchableOpacity activeOpacity={0.8} onPress={() => { if (tx.imageUrl) setSelectedImage(tx.imageUrl) }}>
-                    {tx.imageUrl ? (
-                      <Image source={{ uri: tx.imageUrl }} style={styles.iconBox} />
-                    ) : (
-                      <View style={styles.iconBox}>
-                        <Text style={{ fontSize: 20 }}>💸</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                  <View>
-                    <Text style={styles.merchantText}>{tx.merchant}</Text>
-                    <Text style={styles.dateText}>{tx.date}</Text>
+              <Swipeable
+                key={tx.id}
+                renderLeftActions={(progress, dragX) => renderLeftActions(progress, dragX, tx)}
+                renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, tx.id)}
+                rightThreshold={180}
+                leftThreshold={80}
+                onSwipeableRightOpen={() => handleDelete(tx.id)}
+                onSwipeableLeftOpen={() => handleEdit(tx)}
+              >
+                <View style={[styles.transactionCard, { backgroundColor: '#0d1117', marginBottom: 0 }]}>
+                  <View style={styles.leftCol}>
+                    <TouchableOpacity activeOpacity={0.8} onPress={() => { if (tx.imageUrl) setSelectedImage(tx.imageUrl) }}>
+                      {tx.imageUrl ? (
+                        <Image source={{ uri: tx.imageUrl }} style={styles.iconBox} />
+                      ) : (
+                        <View style={styles.iconBox}>
+                          <Text style={{ fontSize: 20 }}>💸</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                    <View>
+                      <Text style={styles.merchantText}>{tx.merchant}</Text>
+                      <Text style={styles.dateText}>{tx.date}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.rightCol}>
+                    <Text style={styles.amountText}>${tx.amount.toFixed(2)}</Text>
+                    <Text style={styles.categoryText}>{tx.category}</Text>
                   </View>
                 </View>
-                <View style={styles.rightCol}>
-                  <Text style={styles.amountText}>${tx.amount.toFixed(2)}</Text>
-                  <Text style={styles.categoryText}>{tx.category}</Text>
-                </View>
-              </View>
+              </Swipeable>
             ))
           ) : transactions.length > 0 ? (
             <View style={styles.emptyState}>
@@ -326,5 +381,30 @@ const styles = StyleSheet.create({
   fullScreenImage: {
     width: '100%',
     height: '100%',
+  },
+  editAction: {
+    backgroundColor: 'rgba(52, 152, 219, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingLeft: 20,
+    borderRadius: 16,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+    flex: 1,
+  },
+  deleteAction: {
+    backgroundColor: 'rgba(231, 76, 60, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingRight: 20,
+    borderRadius: 16,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    flex: 1,
+  },
+  actionText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   }
 });
