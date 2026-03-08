@@ -1,0 +1,8 @@
+# Ignore backend/functions code to prevent build conflicts
+functions/
+backend/
+
+# Standard ignores
+node_modules/
+.expo/
+.git/

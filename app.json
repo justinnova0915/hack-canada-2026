@@ -12,6 +12,20 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.hismondon.hackcanada2026",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC_gp5brCgldCRcC7TuhSyD-G8ZHhylwTs"
+        }
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,8 +33,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.hismondon.hackcanada2026"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
@@ -45,6 +58,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "798e39e7-ceb6-4410-8798-0b54b9fc1704"
+      }
     }
   }
 }
