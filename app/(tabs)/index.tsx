@@ -13,6 +13,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -480,7 +481,6 @@ export default function HomeScreen(): React.ReactElement {
   const handleFlip = () => {
     setFacing(toggleFacing);
   };
-
   const handleProceed = () => {
     if (photoUri && photoBase64) {
       processImageWithAI(photoUri, photoBase64);
@@ -672,7 +672,27 @@ export default function HomeScreen(): React.ReactElement {
       <StatusBar barStyle="light-content" />
 
       {cameraReady ? (
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={facing} />
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={handleTapToFocus}
+        >
+          <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={facing} />
+
+          {/* Focus square */}
+          {focusPoint && (
+            <Animated.View
+              style={[
+                styles.focusSquare,
+                {
+                  left: focusPoint.x - 37,
+                  top: focusPoint.y - 37,
+                  opacity: focusOpacityAnim,
+                  transform: [{ scale: focusScaleAnim }],
+                },
+              ]}
+            />
+          )}
+        </Pressable>
       ) : (
         <TouchableOpacity
           style={[StyleSheet.absoluteFillObject, styles.permissionBox]}
@@ -1111,6 +1131,14 @@ const styles = StyleSheet.create({
     color: '#e8a44a',
     fontSize: 22,
     fontWeight: '900',
+  },
+  focusSquare: {
+    position: 'absolute',
+    width: 74,
+    height: 74,
+    borderWidth: 2,
+    borderColor: '#e8a44a',
+    borderRadius: 4,
   },
   paymentChip: {
     flexDirection: 'row',
