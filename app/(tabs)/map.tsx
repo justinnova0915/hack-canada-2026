@@ -33,18 +33,21 @@ export default function MapScreen() {
           if (isActive) {
             const mappedTransactions = receipts.map((r) => {
               const data = r.receiptData || {};
-              // Add a slight random offset so markers don't overlap completely if they don't have distinct coordinates
-              const latOffset = (Math.random() - 0.5) * 0.02;
-              const lngOffset = (Math.random() - 0.5) * 0.02;
+              const latitude = Number((data.location as any)?.latitude);
+              const longitude = Number((data.location as any)?.longitude);
+
+              if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+                return null;
+              }
 
               return {
                 id: r.id,
-                latitude: (data.location as any)?.latitude || (43.6532 + latOffset), // Default Toronto Latitude with jitter
-                longitude: (data.location as any)?.longitude || (-79.3832 + lngOffset), // Default Toronto Longitude with jitter
+                latitude,
+                longitude,
                 title: data.merchant?.name || 'Unknown Merchant',
                 description: `$${data.totals?.gross?.toFixed(2) || '0.00'} - ${data.date || 'Unknown Date'}`,
               };
-            });
+            }).filter(Boolean) as any[];
             setTransactions(mappedTransactions);
           }
         } catch (error) {

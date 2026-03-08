@@ -26,9 +26,8 @@ export interface ReceiptData {
 
 export const logReceipt = async (userId: string, receiptData: ReceiptData) => {
   try {
-    const receiptsRef = collection(db, 'receipts');
+    const receiptsRef = collection(db, 'users', userId, 'receipts');
     const docRef = await addDoc(receiptsRef, {
-      userId,
       receiptData,
       createdAt: Timestamp.now(),
     });
@@ -42,10 +41,9 @@ export const logReceipt = async (userId: string, receiptData: ReceiptData) => {
 
 export const getUserReceipts = async (userId: string) => {
   try {
-    const receiptsRef = collection(db, 'receipts');
+    const receiptsRef = collection(db, 'users', userId, 'receipts');
     const q = query(
       receiptsRef,
-      where('userId', '==', userId),
       orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
