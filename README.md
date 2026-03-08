@@ -1,50 +1,130 @@
-# Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# Pocket Pilot
 
-## Get started
+Pocket Pilot is a mobile expense tracker built with Expo + React Native.  
+It helps users centralize spending by turning receipt photos into structured transactions with AI.
 
-1. Install dependencies
+## Why Pocket Pilot
 
-   ```bash
-   npm install
-   ```
+Most spending data is fragmented across cards, Apple Wallet, and bank apps. Pocket Pilot creates one place to:
 
-2. Start the app
+- Capture expenses quickly
+- Categorize spending automatically
+- Review history and trends
+- Compare spending against income
 
-   ```bash
-   npx expo start
-   ```
+## Core Features
 
-In the output, you'll find options to open the app in a
+- Camera/gallery receipt upload
+- AI extraction of merchant, items, totals, category, and payment details
+- Verify and edit transaction details before saving
+- History page with searchable transaction logs
+- Stats dashboard with spending breakdowns
+- Map view with pins for transactions that include valid coordinates
+- Profile page with monthly income input and spending progress
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **Frontend:** Expo, React Native, Expo Router
+- **Backend:** Node.js, Express
+- **Database/Auth:** Firebase Auth + Firestore
+- **Services:** Custom API layer and receipt/stat aggregation services
 
-## Get a fresh project
+## Project Structure
 
-When you're ready, run:
+- `app/(tabs)/index.tsx` — Home flow (capture, analyze, verify, log)
+- `app/(tabs)/history.tsx` — Searchable transaction ledger
+- `app/(tabs)/stats.tsx` — Expense analytics and charts
+- `app/(tabs)/map.tsx` — Transaction location pins
+- `app/(tabs)/profile.tsx` — Account + budgeting UI
+- `services/` — API calls, receipt logging, spend stats
+- `backend/` — AI pipeline and API endpoints
 
-```bash
-npm run reset-project
+## Environment Setup
+
+Create two env files.
+
+### 1) Frontend `.env` (project root)
+
+```env
+EXPO_PUBLIC_FIREBASE_API_KEY=
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+EXPO_PUBLIC_FIREBASE_APP_ID=
+EXPO_PUBLIC_WEB_CLIENT_ID=
+EXPO_PUBLIC_API_BASE_URL=
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2) Backend `backend/.env`
 
-## Learn more
+Add your backend/API secrets and pipeline configuration values.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Getting Started
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Install frontend dependencies:
 
-## Join the community
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+Start the frontend:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+```
+
+Start the backend:
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+## Running on Devices
+
+Run on the same local network:
+
+```bash
+npx expo start --lan
+```
+
+Use tunnel mode if the local network does not work:
+
+```bash
+npx expo start --tunnel
+```
+
+Clear Metro cache if the bundler behaves unexpectedly:
+
+```bash
+npx expo start -c
+```
+
+## Demo Flow (Quick)
+
+```
+1. Open the Home tab
+2. Take a receipt photo or select one from the gallery
+3. The AI analyzes and extracts transaction data
+4. Review and edit the extracted details
+5. Tap Verify & Log
+6. Confirm the transaction in the History tab
+7. View spending insights in Stats and location pins in Map
+```
+
+## Current State
+
+Pocket Pilot is a working prototype with end-to-end receipt capture, AI parsing, transaction storage, and multi-tab analysis views. The current build focuses on fast receipt logging and centralized spending visibility.
+
+## Future Improvements
+
+```
+- Better recurring and subcategory detection (subscriptions, debt, essentials)
+- Stronger AI budgeting advice engine
+- Improved geolocation capture for map insights
+- Export and share monthly spending reports
+```
+```
