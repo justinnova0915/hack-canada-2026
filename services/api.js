@@ -1,7 +1,7 @@
 
 const getApiBaseUrl = () => {
-    // Both platforms will use the production Firebase Cloud Function URL
-    return 'https://us-central1-hack-canada-2026-b2c76.cloudfunctions.net/api';
+    // TEMP: Local testing - switch back to Firebase Cloud Function URL before deploy
+    return 'http://172.20.10.5:3000';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

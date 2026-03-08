@@ -1,5 +1,7 @@
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -10,39 +12,29 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
 
-import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '@/context/AuthContext';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import CustomNavBar from '../../components/CustomNavBar';
+import { db } from '../../firebaseConfig';
+import { getBudgetAdvice } from '../../services/budgetService';
 import { getUserReceipts } from '../../services/receiptService';
 import { aggregateSpendStats } from '../../services/spendStats';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../../firebaseConfig';
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
   const [monthlyIncome, setMonthlyIncome] = useState('');
   const [monthlySpent, setMonthlySpent] = useState(0);
+  const [monthlyExpenses, setMonthlyExpenses] = useState({ necessary: 0, miscellaneous: 0, recurring: 0 });
+  const [budgetAdvice, setBudgetAdvice] = useState<any>(null);
+  const [adviceLoading, setAdviceLoading] = useState(false);
+  const [adviceError, setAdviceError] = useState('');
   const totalSpent = monthlySpent;
   const incomeValue = parseFloat(monthlyIncome) || 0;
   const progress = incomeValue > 0 ? Math.min(Math.max(totalSpent / incomeValue, 0), 1) : 0;
   const remaining = incomeValue - totalSpent;
   const hasIncome = incomeValue > 0;
-  const spendRatio = hasIncome ? totalSpent / incomeValue : 0;
-  const adviceText = !hasIncome
-    ? 'Set your monthly income to get personalized budgeting advice.'
-    : spendRatio < 0.5
-      ? 'You are pacing well this month. Keep discretionary spending steady to stay under budget.'
-      : spendRatio < 0.85
-        ? 'You are in a healthy range. Review non-essential purchases weekly to protect your remaining budget.'
-        : spendRatio <= 1
-          ? 'You are close to your budget cap. Prioritize essentials for the rest of the month.'
-          : 'You are over budget this month. Reduce variable expenses and plan a catch-up target next month.';
-  const adviceToneStyle = !hasIncome
-    ? styles.adviceNeutral
-    : spendRatio <= 1
-      ? styles.adviceGood
-      : styles.adviceWarning;
+
 
   useFocusEffect(
     useCallback(() => {
@@ -68,6 +60,7 @@ export default function ProfileScreen() {
           const stats = aggregateSpendStats(receipts);
           if (isActive) {
             setMonthlySpent(stats.totals.monthly);
+            setMonthlyExpenses(stats.expenses.monthly);
           }
         } catch (error) {
           console.error('Failed to fetch data', error);
@@ -165,9 +158,112 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Budgeting Advice</Text>
-            <Text style={[styles.adviceText, adviceToneStyle]}>{adviceText}</Text>
+            <Text style={styles.cardTitle}>🤖 AI Budget Advisor</Text>
+            <Text style={styles.cardSubtitle}>Personalized advice powered by Gemini AI</Text>
+
+            <TouchableOpacity
+              style={[styles.adviceButton, (adviceLoading || !hasIncome) && { opacity: 0.6 }]}
+              activeOpacity={0.85}
+              disabled={adviceLoading || !hasIncome}
+              onPress={async () => {
+                setAdviceError('');
+                setAdviceLoading(true);
+                try {
+                  const result = await getBudgetAdvice(incomeValue, monthlyExpenses);
+                  setBudgetAdvice(result.data);
+                } catch (e: any) {
+                  setAdviceError(e.message || 'Failed to get advice.');
+                } finally {
+                  setAdviceLoading(false);
+                }
+              }}
+            >
+              {adviceLoading ? (
+                <ActivityIndicator size="small" color="#0d1117" />
+              ) : (
+                <Text style={styles.adviceButtonText}>✨ Get AI Advice</Text>
+              )}
+            </TouchableOpacity>
+            {!hasIncome && <Text style={styles.insightMuted}>Enter your income above first</Text>}
+            {adviceError ? <Text style={styles.errorText}>{adviceError}</Text> : null}
           </View>
+
+          {budgetAdvice && (
+            <>
+              {/* Score Card */}
+              <View style={styles.card}>
+                <View style={styles.scoreHeader}>
+                  <View style={styles.scoreCircle}>
+                    <Text style={styles.scoreValue}>{budgetAdvice.overallScore}</Text>
+                    <Text style={styles.scoreOutOf}>/100</Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 16 }}>
+                    <Text style={styles.scoreLabelText}>{budgetAdvice.scoreLabel}</Text>
+                    <Text style={styles.scoreSummary}>{budgetAdvice.summary}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Recommended Budget Split */}
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>📊 Recommended Budget</Text>
+                <Text style={styles.cardSubtitle}>AI-optimized allocation for your income</Text>
+
+                <View style={styles.pieChartContainer}>
+                  {[
+                    { label: 'Necessary', pct: budgetAdvice.recommendedBudget.necessary, color: '#e8a44a', target: budgetAdvice.monthlyTarget.necessary },
+                    { label: 'Miscellaneous', pct: budgetAdvice.recommendedBudget.miscellaneous, color: '#c9663c', target: budgetAdvice.monthlyTarget.miscellaneous },
+                    { label: 'Recurring', pct: budgetAdvice.recommendedBudget.recurring, color: '#9c8166', target: budgetAdvice.monthlyTarget.recurring },
+                    { label: 'Savings', pct: budgetAdvice.recommendedBudget.savings, color: '#4ade80', target: budgetAdvice.monthlyTarget.savings },
+                  ].map((item, idx) => (
+                    <View key={idx} style={styles.pieRow}>
+                      <View style={styles.pieRowLeft}>
+                        <View style={[styles.pieDot, { backgroundColor: item.color }]} />
+                        <Text style={styles.pieLabel}>{item.label}</Text>
+                      </View>
+                      <View style={styles.pieRowRight}>
+                        <View style={styles.pieBarBg}>
+                          <View style={[styles.pieBarFill, { width: `${item.pct}%`, backgroundColor: item.color }]} />
+                        </View>
+                        <Text style={styles.piePct}>{item.pct}%</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                <View style={styles.targetGrid}>
+                  {[
+                    { label: 'Necessary', amount: budgetAdvice.monthlyTarget.necessary, color: '#e8a44a' },
+                    { label: 'Misc', amount: budgetAdvice.monthlyTarget.miscellaneous, color: '#c9663c' },
+                    { label: 'Recurring', amount: budgetAdvice.monthlyTarget.recurring, color: '#9c8166' },
+                    { label: 'Savings', amount: budgetAdvice.monthlyTarget.savings, color: '#4ade80' },
+                  ].map((item, idx) => (
+                    <View key={idx} style={styles.targetItem}>
+                      <Text style={[styles.targetAmount, { color: item.color }]}>${item.amount}</Text>
+                      <Text style={styles.targetLabel}>{item.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {/* Tips */}
+              <View style={styles.card}>
+                <Text style={styles.cardTitle}>💡 Personalized Tips</Text>
+
+                <View style={{ gap: 10 }}>
+                  {budgetAdvice.tips?.map((tip: any, idx: number) => (
+                    <View key={idx} style={styles.tipCard}>
+                      <Text style={styles.tipIcon}>{tip.icon}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.tipTitle}>{tip.title}</Text>
+                        <Text style={styles.tipDesc}>{tip.description}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </>
+          )}
 
           <TouchableOpacity style={styles.logoutButton} onPress={signOut} activeOpacity={0.85}>
             <Text style={styles.logoutButtonText}>Logout</Text>
@@ -337,5 +433,155 @@ const styles = StyleSheet.create({
     color: '#f0ece3',
     fontSize: 15,
     fontWeight: '800',
+  },
+  errorText: {
+    color: '#ff6b6b',
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  adviceButton: {
+    backgroundColor: '#e8a44a',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  adviceButtonText: {
+    color: '#0d1117',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  scoreHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  scoreCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(232,164,74,0.12)',
+    borderWidth: 3,
+    borderColor: '#e8a44a',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreValue: {
+    color: '#e8a44a',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  scoreOutOf: {
+    color: 'rgba(232,164,74,0.6)',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: -3,
+  },
+  scoreLabelText: {
+    color: '#e8a44a',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  scoreSummary: {
+    color: 'rgba(240,236,227,0.7)',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  pieChartContainer: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  pieRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pieRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 100,
+  },
+  pieDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  pieLabel: {
+    color: '#f0ece3',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  pieRowRight: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pieBarBg: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  pieBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  piePct: {
+    color: 'rgba(240,236,227,0.7)',
+    fontSize: 12,
+    fontWeight: '700',
+    width: 36,
+    textAlign: 'right',
+  },
+  targetGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  targetItem: {
+    width: '47%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  targetAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  targetLabel: {
+    color: 'rgba(240,236,227,0.5)',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  tipCard: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  tipIcon: {
+    fontSize: 22,
+  },
+  tipTitle: {
+    color: '#f0ece3',
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  tipDesc: {
+    color: 'rgba(240,236,227,0.6)',
+    fontSize: 12,
+    lineHeight: 17,
   },
 });
