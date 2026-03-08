@@ -434,6 +434,4 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: -4,
   },
-
-  
 });

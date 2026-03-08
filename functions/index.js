@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const multer = require("multer");
 const pipelineController = require("./src/controllers/pipelineController");
+const budgetController = require("./src/controllers/budgetController");
 
 const app = express();
 
@@ -25,6 +26,9 @@ app.post("/api/upload-receipt", upload.single("image"), pipelineController.proce
 
 // New AI Pipeline Endpoint (Web Base64 JSON)
 app.post("/api/upload-receipt-base64", pipelineController.processReceiptImageBase64);
+
+// AI Budget Advice Endpoint
+app.post("/api/budget-advice", budgetController.getBudgetAdvice);
 
 // Export the Express app as a Firebase Function
 // Configuring timeout to 5 minutes and memory to 1GB for AI operations
