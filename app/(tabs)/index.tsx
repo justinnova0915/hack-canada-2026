@@ -3,7 +3,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import Octicons from '@expo/vector-icons/Octicons';
 import { CameraView, useCameraPermissions, type CameraType } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
@@ -316,6 +316,7 @@ const navStyles = StyleSheet.create({
 
 export default function HomeScreen(): React.ReactElement {
   const router = useRouter();
+  const params = useLocalSearchParams<{ updatedAiResult?: string }>();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -325,6 +326,18 @@ export default function HomeScreen(): React.ReactElement {
   const cameraRef = useRef<CameraView>(null);
 
   const [aiResult, setAiResult] = useState<any>(null);
+
+  useEffect(() => {
+    if (params.updatedAiResult) {
+      try {
+        const parsed = JSON.parse(params.updatedAiResult);
+        setAiResult(parsed);
+        router.setParams({ updatedAiResult: '' });
+      } catch (e) {
+        console.error('Failed to parse updatedAiResult', e);
+      }
+    }
+  }, [params.updatedAiResult]);
   const [analyzingLoading, setAnalyzingLoading] = useState(false);
   const [loggingLoading, setLoggingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -489,9 +502,7 @@ export default function HomeScreen(): React.ReactElement {
                   router.push({
                     pathname: '/(tabs)/edit',
                     params: {
-                      items: JSON.stringify(aiResult.items),
-                      merchant: JSON.stringify(aiResult.merchant),
-                      totals: JSON.stringify(aiResult.totals),
+                      aiResult: JSON.stringify(aiResult)
                     },
                   });
                 }}>
