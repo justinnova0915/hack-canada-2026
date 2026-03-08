@@ -128,13 +128,18 @@ export default function HistoryScreen() {
 
   useEffect(() => {
     if (loading) return;
-    if (params.saved !== '1') return;
-
-    setShowSavedBanner(true);
-    router.setParams({ saved: undefined });
-    const timer = setTimeout(() => setShowSavedBanner(false), 1500);
-    return () => clearTimeout(timer);
+    if (params.saved === '1') {
+      setShowSavedBanner(true);
+      router.setParams({ saved: undefined });
+    }
   }, [loading, params.saved, router]);
+
+  useEffect(() => {
+    if (showSavedBanner) {
+      const timer = setTimeout(() => setShowSavedBanner(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [showSavedBanner]);
 
   return (
     <>
