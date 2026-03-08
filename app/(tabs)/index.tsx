@@ -686,7 +686,11 @@ export default function HomeScreen(): React.ReactElement {
             <View style={styles.paymentChip}>
               <Feather name="credit-card" size={14} color="#e8a44a" />
               <Text style={styles.paymentText}>
-                {aiResult.source?.paymentMethod} {aiResult.source?.cardIdentifier}
+                {aiResult.source?.paymentMethod || aiResult.source?.cardIdentifier
+                  ? [aiResult.source?.paymentMethod, aiResult.source?.cardIdentifier]
+                      .filter(Boolean)
+                      .join(' ')
+                  : 'No payment method detected'}
               </Text>
             </View>
 

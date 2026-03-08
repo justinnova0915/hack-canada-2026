@@ -224,7 +224,7 @@ export default function StatsScreen() {
                     <View style={[styles.cardColorIndicator, { backgroundColor: card.color }]} />
                     <View>
                       <Text style={styles.creditCardName}>{card.name}</Text>
-                      <Text style={styles.creditCardLast4}>**** {card.last4}</Text>
+                      {card.last4 ? <Text style={styles.creditCardLast4}>**** {card.last4}</Text> : null}
                     </View>
                   </View>
                   <View style={styles.creditCardStats}>
