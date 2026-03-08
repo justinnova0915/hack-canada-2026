@@ -362,6 +362,7 @@ export default function HomeScreen(): React.ReactElement {
 
   const [aiResult, setAiResult] = useState<any>(null);
   const [resultImageLoading, setResultImageLoading] = useState(false);
+  const resultImageLoadStartedAt = useRef<number | null>(null);
 
   useEffect(() => {
     if (params.updatedAiResult) {
@@ -374,6 +375,16 @@ export default function HomeScreen(): React.ReactElement {
       }
     }
   }, [params.updatedAiResult]);
+
+  useEffect(() => {
+    if (aiResult?.imageUrl) {
+      resultImageLoadStartedAt.current = Date.now();
+      setResultImageLoading(true);
+      return;
+    }
+
+    setResultImageLoading(false);
+  }, [aiResult?.imageUrl]);
   const [analyzingLoading, setAnalyzingLoading] = useState(false);
   const [loggingLoading, setLoggingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -489,6 +500,20 @@ export default function HomeScreen(): React.ReactElement {
     }
   };
 
+  const stopResultImageLoader = () => {
+    const minVisibleMs = 350;
+    const startedAt = resultImageLoadStartedAt.current ?? Date.now();
+    const elapsed = Date.now() - startedAt;
+    const wait = Math.max(0, minVisibleMs - elapsed);
+
+    if (wait === 0) {
+      setResultImageLoading(false);
+      return;
+    }
+
+    setTimeout(() => setResultImageLoading(false), wait);
+  };
+
   const handleShowAllItems = () => {
     if (!aiResult?.items?.length) return;
 
@@ -555,12 +580,16 @@ export default function HomeScreen(): React.ReactElement {
             {aiResult.imageUrl && (
               <View style={styles.resultImageWrap}>
                 <Image
+                  key={aiResult.imageUrl}
                   source={{ uri: aiResult.imageUrl }}
                   style={styles.resultImage}
                   resizeMode="cover"
-                  onLoadStart={() => setResultImageLoading(true)}
-                  onLoadEnd={() => setResultImageLoading(false)}
-                  onError={() => setResultImageLoading(false)}
+                  onLoadStart={() => {
+                    resultImageLoadStartedAt.current = Date.now();
+                    setResultImageLoading(true);
+                  }}
+                  onLoadEnd={stopResultImageLoader}
+                  onError={stopResultImageLoader}
                 />
                 {resultImageLoading ? (
                   <View style={styles.resultImageLoaderOverlay}>
