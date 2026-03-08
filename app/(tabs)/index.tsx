@@ -361,6 +361,7 @@ export default function HomeScreen(): React.ReactElement {
   const cameraRef = useRef<CameraView>(null);
 
   const [aiResult, setAiResult] = useState<any>(null);
+  const [resultImageLoading, setResultImageLoading] = useState(false);
 
   useEffect(() => {
     if (params.updatedAiResult) {
@@ -475,6 +476,7 @@ export default function HomeScreen(): React.ReactElement {
     setPhotoUri(null);
     setPhotoBase64(null);
     setAiResult(null);
+    setResultImageLoading(false);
     setErrorMsg('');
   };
 
@@ -551,11 +553,21 @@ export default function HomeScreen(): React.ReactElement {
 
           <View style={styles.resultsCard}>
             {aiResult.imageUrl && (
-              <Image
-                source={{ uri: aiResult.imageUrl }}
-                style={{ width: '100%', height: 180, borderRadius: 15, marginBottom: 16 }}
-                resizeMode="cover"
-              />
+              <View style={styles.resultImageWrap}>
+                <Image
+                  source={{ uri: aiResult.imageUrl }}
+                  style={styles.resultImage}
+                  resizeMode="cover"
+                  onLoadStart={() => setResultImageLoading(true)}
+                  onLoadEnd={() => setResultImageLoading(false)}
+                  onError={() => setResultImageLoading(false)}
+                />
+                {resultImageLoading ? (
+                  <View style={styles.resultImageLoaderOverlay}>
+                    <ActivityIndicator size="small" color="#e8a44a" />
+                  </View>
+                ) : null}
+              </View>
             )}
             <View style={styles.merchantRow}>
               <Text style={styles.merchantName}>{aiResult.merchant?.name || 'Unknown'}</Text>
@@ -1016,6 +1028,25 @@ const styles = StyleSheet.create({
     padding: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
+  },
+  resultImageWrap: {
+    width: '100%',
+    height: 180,
+    borderRadius: 15,
+    marginBottom: 16,
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  resultImage: {
+    width: '100%',
+    height: '100%',
+  },
+  resultImageLoaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(13,17,23,0.35)',
   },
   merchantRow: {
     flexDirection: 'row',
