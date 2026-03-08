@@ -1,4 +1,4 @@
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 export interface ReceiptData {
@@ -64,6 +64,19 @@ export const deleteReceipt = async (userId: string, receiptId: string) => {
     await deleteDoc(docRef);
   } catch (e) {
     console.error('Error deleting document: ', e);
+    throw e;
+  }
+};
+
+export const updateReceipt = async (userId: string, receiptId: string, receiptData: ReceiptData) => {
+  try {
+    const docRef = doc(db, 'users', userId, 'receipts', receiptId);
+    await updateDoc(docRef, {
+      receiptData,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (e) {
+    console.error('Error updating document: ', e);
     throw e;
   }
 };

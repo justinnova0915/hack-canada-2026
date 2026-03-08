@@ -29,7 +29,7 @@ export default function HistoryScreen() {
   const handleEdit = (tx: any) => {
     router.push({
       pathname: '/(tabs)',
-      params: { updatedAiResult: JSON.stringify(tx.rawReceipt) }
+      params: { updatedAiResult: JSON.stringify({ ...tx.rawReceipt, id: tx.id }) }
     });
   };
 

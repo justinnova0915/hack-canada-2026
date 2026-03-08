@@ -24,7 +24,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '../../context/AuthContext';
 import { uploadReceiptImage } from '../../services/api';
-import { logReceipt } from '../../services/receiptService';
+import { logReceipt, updateReceipt } from '../../services/receiptService';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -475,7 +475,12 @@ export default function HomeScreen(): React.ReactElement {
     if (!aiResult) return;
     try {
       setLoggingLoading(true);
-      await logReceipt(user.uid, aiResult);
+      if (aiResult.id) {
+        const { id, ...dataToSave } = aiResult;
+        await updateReceipt(user.uid, id, dataToSave);
+      } else {
+        await logReceipt(user.uid, aiResult);
+      }
       handleRetake();
       router.push({ pathname: '/(tabs)/history', params: { saved: '1' } });
     } catch (e: any) {
@@ -599,7 +604,7 @@ export default function HomeScreen(): React.ReactElement {
             </View>
 
             <TouchableOpacity style={styles.btnPrimary} activeOpacity={0.85} onPress={handleLogReceipt}>
-              <Text style={styles.btnPrimaryText}>Verify & Log</Text>
+              <Text style={styles.btnPrimaryText}>{aiResult.id ? 'Verify & Update' : 'Verify & Log'}</Text>
             </TouchableOpacity>
           </View>
         </View>
