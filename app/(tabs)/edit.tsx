@@ -3,8 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAuth } from '../../context/AuthContext';
-import { logReceipt } from '../../services/receiptService';
 
 type ReceiptItem = {
     name?: string;
@@ -14,38 +12,20 @@ type ReceiptItem = {
 export default function EditScreen(): React.ReactElement {
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    const { user } = useAuth();
-    const { items, merchant, totals } = useLocalSearchParams<{ items?: string, merchant?: string, totals?: string }>();
+    const { aiResult } = useLocalSearchParams<{ aiResult?: string }>();
+
+    const originalAiResult = useMemo(() => {
+        if (!aiResult || Array.isArray(aiResult)) return {};
+        try {
+            return JSON.parse(aiResult);
+        } catch {
+            return {};
+        }
+    }, [aiResult]);
 
     const initialItems = useMemo<ReceiptItem[]>(() => {
-        if (!items || Array.isArray(items)) return [];
-
-        try {
-            const parsed = JSON.parse(items);
-            if (!Array.isArray(parsed)) return [];
-            return parsed;
-        } catch {
-            return [];
-        }
-    }, [items]);
-
-    const initialMerchant = useMemo(() => {
-        if (!merchant || Array.isArray(merchant)) return {};
-        try {
-            return JSON.parse(merchant);
-        } catch {
-            return {};
-        }
-    }, [merchant]);
-
-    const initialTotals = useMemo(() => {
-        if (!totals || Array.isArray(totals)) return {};
-        try {
-            return JSON.parse(totals);
-        } catch {
-            return {};
-        }
-    }, [totals]);
+        return originalAiResult.items || [];
+    }, [originalAiResult]);
 
     const [editableItems, setEditableItems] = useState<ReceiptItem[]>(initialItems);
     const [saving, setSaving] = useState(false);
@@ -73,13 +53,7 @@ export default function EditScreen(): React.ReactElement {
         return editableItems.reduce((sum, item) => sum + (item.amount || 0), 0);
     };
 
-    const handleSave = async () => {
-        if (!user) {
-            Alert.alert('Error', 'You must be logged in to save receipts.');
-            return;
-        }
-
-        // Filter out invalid items and ensure required fields
+    const handleSave = () => {
         const validItems = editableItems
             .filter(item => item.name && item.name.trim() !== '' && item.amount !== undefined)
             .map(item => ({
@@ -93,30 +67,24 @@ export default function EditScreen(): React.ReactElement {
         }
 
         setSaving(true);
-        try {
-            const newTotal = calculateTotal();
-            const aiResult = {
-                items: validItems,
-                merchant: initialMerchant,
-                totals: {
-                    ...initialTotals,
-                    subtotal: newTotal,
-                    gross: newTotal + (initialTotals.tax || 0) + (initialTotals.tip || 0),
-                },
-                date: new Date().toLocaleDateString(),
-                location: initialTotals.location || {},
-                source: initialTotals.source || {},
-            };
+        const newTotal = calculateTotal();
+        const updatedAiResult = {
+            ...originalAiResult,
+            items: validItems,
+            totals: {
+                ...(originalAiResult.totals || {}),
+                subtotal: newTotal,
+                gross: newTotal + (originalAiResult.totals?.tax || 0) + (originalAiResult.totals?.tip || 0),
+            },
+        };
 
-            await logReceipt(user.uid, aiResult);
-            Alert.alert('Saved', 'Receipt has been saved successfully.', [
-                {
-                    text: 'OK',
-                    onPress: () => router.push('/(tabs)/history'),
-                },
-            ]);
-        } catch (e: any) {
-            Alert.alert('Error', 'Failed to save receipt: ' + e.message);
+        try {
+            router.replace({
+                pathname: '/(tabs)',
+                params: { updatedAiResult: JSON.stringify(updatedAiResult) }
+            });
+        } catch (error) {
+            console.error(error);
         } finally {
             setSaving(false);
         }
@@ -193,13 +161,13 @@ export default function EditScreen(): React.ReactElement {
 
             <View style={[styles.saveBar, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
-                    style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                    style={[styles.saveBtn, (saving || editableItems.length === 0) && styles.saveBtnDisabled]}
                     onPress={handleSave}
                     activeOpacity={0.85}
                     disabled={saving || editableItems.length === 0}
                 >
                     <Text style={styles.saveBtnText}>
-                        {saving ? 'Saving...' : `Save Receipt (${editableItems.length} items)`}
+                        {saving ? 'Returning...' : `Done Editing (${editableItems.length} items)`}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -379,7 +347,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     saveBtnDisabled: {
-        backgroundColor: 'rgba(232,164,74,0.5)',
+        backgroundColor: 'rgba(167, 142, 111, 0.5)',
     },
     saveBtnText: {
         color: '#fff',
