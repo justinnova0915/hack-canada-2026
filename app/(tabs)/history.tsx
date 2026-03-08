@@ -14,6 +14,8 @@ export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageLoadingById, setImageLoadingById] = useState<Record<string, boolean>>({});
+  const [modalImageLoading, setModalImageLoading] = useState(false);
   const [showSavedBanner, setShowSavedBanner] = useState(false);
 
   const handleDelete = async (receiptId: string) => {
@@ -174,9 +176,36 @@ export default function HistoryScreen() {
               >
                 <View style={[styles.transactionCard, { backgroundColor: '#0d1117', marginBottom: 0 }]}>
                   <View style={styles.leftCol}>
-                    <TouchableOpacity activeOpacity={0.8} onPress={() => { if (tx.imageUrl) setSelectedImage(tx.imageUrl) }}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        if (tx.imageUrl) {
+                          setModalImageLoading(true);
+                          setSelectedImage(tx.imageUrl);
+                        }
+                      }}
+                    >
                       {tx.imageUrl ? (
-                        <Image source={{ uri: tx.imageUrl }} style={styles.iconBox} />
+                        <View style={styles.imageThumbWrap}>
+                          <Image
+                            source={{ uri: tx.imageUrl }}
+                            style={styles.iconBox}
+                            onLoadStart={() => {
+                              setImageLoadingById((prev) => ({ ...prev, [tx.id]: true }));
+                            }}
+                            onLoadEnd={() => {
+                              setImageLoadingById((prev) => ({ ...prev, [tx.id]: false }));
+                            }}
+                            onError={() => {
+                              setImageLoadingById((prev) => ({ ...prev, [tx.id]: false }));
+                            }}
+                          />
+                          {imageLoadingById[tx.id] ? (
+                            <View style={styles.thumbLoaderOverlay}>
+                              <ActivityIndicator size="small" color="#e8a44a" />
+                            </View>
+                          ) : null}
+                        </View>
                       ) : (
                         <View style={styles.iconBox}>
                           <Text style={{ fontSize: 20 }}>💸</Text>
@@ -218,7 +247,21 @@ export default function HistoryScreen() {
             <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Close</Text>
           </TouchableOpacity>
           {selectedImage && (
-            <Image source={{ uri: selectedImage }} style={styles.fullScreenImage} resizeMode="contain" />
+            <View style={styles.modalImageWrap}>
+              <Image
+                source={{ uri: selectedImage }}
+                style={styles.fullScreenImage}
+                resizeMode="contain"
+                onLoadStart={() => setModalImageLoading(true)}
+                onLoadEnd={() => setModalImageLoading(false)}
+                onError={() => setModalImageLoading(false)}
+              />
+              {modalImageLoading ? (
+                <View style={styles.modalLoaderOverlay}>
+                  <ActivityIndicator size="large" color="#e8a44a" />
+                </View>
+              ) : null}
+            </View>
           )}
         </View>
       </Modal>
@@ -317,6 +360,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
+  imageThumbWrap: {
+    position: 'relative',
+    width: 48,
+    height: 48,
+  },
+  thumbLoaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 24,
+    backgroundColor: 'rgba(13,17,23,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   merchantText: {
     fontSize: 16,
     fontWeight: '700',
@@ -381,6 +436,17 @@ const styles = StyleSheet.create({
   fullScreenImage: {
     width: '100%',
     height: '100%',
+  },
+  modalImageWrap: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  modalLoaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   editAction: {
     backgroundColor: 'rgba(52, 152, 219, 0.4)',

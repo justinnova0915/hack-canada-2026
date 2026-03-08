@@ -13,6 +13,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -379,6 +380,37 @@ export default function HomeScreen(): React.ReactElement {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
+  const focusScaleAnim = useRef(new Animated.Value(1.5)).current;
+  const focusOpacityAnim = useRef(new Animated.Value(0)).current;
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleTapToFocus = (evt: any) => {
+    const { locationX, locationY } = evt.nativeEvent;
+    setFocusPoint({ x: locationX, y: locationY });
+
+    focusScaleAnim.stopAnimation();
+    focusOpacityAnim.stopAnimation();
+    focusScaleAnim.setValue(1.5);
+    focusOpacityAnim.setValue(1);
+
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+
+    Animated.spring(focusScaleAnim, {
+      toValue: 1,
+      friction: 6,
+      tension: 120,
+      useNativeDriver: true,
+    }).start();
+
+    focusTimeoutRef.current = setTimeout(() => {
+      Animated.timing(focusOpacityAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => setFocusPoint(null));
+    }, 600);
+  };
   const toggleFacing = (current: CameraType): CameraType =>
     current === 'back' ? 'front' : 'back';
 
@@ -449,7 +481,6 @@ export default function HomeScreen(): React.ReactElement {
   const handleFlip = () => {
     setFacing(toggleFacing);
   };
-
   const handleProceed = () => {
     if (photoUri && photoBase64) {
       processImageWithAI(photoUri, photoBase64);
@@ -646,7 +677,27 @@ export default function HomeScreen(): React.ReactElement {
       <StatusBar barStyle="light-content" />
 
       {cameraReady ? (
-        <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={facing} />
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={handleTapToFocus}
+        >
+          <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={facing} />
+
+          {/* Focus square */}
+          {focusPoint && (
+            <Animated.View
+              style={[
+                styles.focusSquare,
+                {
+                  left: focusPoint.x - 37,
+                  top: focusPoint.y - 37,
+                  opacity: focusOpacityAnim,
+                  transform: [{ scale: focusScaleAnim }],
+                },
+              ]}
+            />
+          )}
+        </Pressable>
       ) : (
         <TouchableOpacity
           style={[StyleSheet.absoluteFillObject, styles.permissionBox]}
@@ -1085,6 +1136,14 @@ const styles = StyleSheet.create({
     color: '#e8a44a',
     fontSize: 22,
     fontWeight: '900',
+  },
+  focusSquare: {
+    position: 'absolute',
+    width: 74,
+    height: 74,
+    borderWidth: 2,
+    borderColor: '#e8a44a',
+    borderRadius: 4,
   },
   paymentChip: {
     flexDirection: 'row',
