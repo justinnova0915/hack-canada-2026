@@ -30,6 +30,15 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 /* ── Liquid Wave Loading ────────────────────────────────────────── */
 
+const LOADING_MESSAGES = [
+  'Extracting expenses...',
+  'Identifying items...',
+  'Reading merchant details...',
+  'Calculating totals...',
+  'Processing payment information...',
+  'Almost done...'
+];
+
 function LiquidLoading() {
   const fillAnim = useRef(new Animated.Value(0)).current;
   const timeRef = useRef(0);
@@ -38,6 +47,8 @@ function LiquidLoading() {
   const [highlightPath, setHighlightPath] = useState('');
   const fillRef = useRef(0);
   const reachedTarget = useRef(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const textFadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(fillAnim, {
@@ -139,6 +150,27 @@ function LiquidLoading() {
     };
   }, [buildPaths]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Animated.sequence([
+        Animated.timing(textFadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(textFadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      setCurrentMessageIndex((prev) => (prev + 1) % LOADING_MESSAGES.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [textFadeAnim]);
+
   return (
     <View style={liquidStyles.container}>
       <StatusBar barStyle="light-content" />
@@ -149,7 +181,9 @@ function LiquidLoading() {
       <View style={liquidStyles.content}>
         <FontAwesome6 size={32} name="receipt" color="#b46e14" style={{ marginBottom: 28 }} />
         <Text style={liquidStyles.title}>Analyzing</Text>
-        <Text style={liquidStyles.subtitle}>Extracting expenses from your receipt...</Text>
+        <Animated.Text style={[liquidStyles.subtitle, { opacity: textFadeAnim }]}>
+          {LOADING_MESSAGES[currentMessageIndex]}
+        </Animated.Text>
       </View>
     </View>
   );

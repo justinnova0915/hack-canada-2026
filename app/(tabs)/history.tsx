@@ -1,10 +1,10 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, View, Image, TouchableOpacity, Modal, Animated } from 'react-native';
+import { ActivityIndicator, Animated, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import CustomNavBar from '../../components/CustomNavBar';
 import { useAuth } from '../../context/AuthContext';
-import { getUserReceipts, deleteReceipt } from '../../services/receiptService';
-import { Swipeable } from 'react-native-gesture-handler';
+import { deleteReceipt, getUserReceipts } from '../../services/receiptService';
 
 export default function HistoryScreen() {
   const { user } = useAuth();
@@ -143,7 +143,7 @@ export default function HistoryScreen() {
           </View>
         )}
         <Text style={styles.sectionLabel}>PAPER TRAIL</Text>
-        <Text style={styles.heroTitle}>Digital Ledger</Text>
+        <Text style={styles.heroTitle}>Past Purchases</Text>
 
         <View style={styles.searchContainer}>
           <Text style={styles.searchIcon}>🔍</Text>
