@@ -25,6 +25,7 @@ Most spending data is fragmented across cards, Apple Wallet, and bank apps. Pock
 
 ## Tech Stack
 
+
 - **Frontend:** Expo, React Native, Expo Router
 - **Backend:** Node.js, Express
 - **Database/Auth:** Firebase Auth + Firestore
